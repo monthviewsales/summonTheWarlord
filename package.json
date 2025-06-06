@@ -1,6 +1,6 @@
 {
   "name": "summonwarlord",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "The Warlord slays for your bags! ",
   "main": "warlord-cli.js",
   "scripts": {
