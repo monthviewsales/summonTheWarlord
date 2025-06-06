@@ -5,8 +5,8 @@
 //   Defines "buy" and "sell" commands, invoking trades.js functions and
 //   printing trade details (PnL, session PnL, etc.) in-character.
 // ───────────────────────────────────────────────────────────────────────────────
+require('dotenv').config();
 
-import "dotenv-vault/config";    // ← decrypts .env.vault and populates process.env
 import { Command } from "commander";
 import { buyToken, sellToken } from "./trades.js";
 

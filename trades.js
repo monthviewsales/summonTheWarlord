@@ -11,7 +11,7 @@
 //   After each buy or sell, prints that trade’s PnL and cumulative session PnL.
 // ───────────────────────────────────────────────────────────────────────────────
 
-import "dotenv-vault/config";  // ← decrypt .env.vault & populate process.env
+require('dotenv').config();
 
 import { Client as DataApiClient } from "@solana-tracker/data-api";        //  [oai_citation:3‡github.com](https://github.com/YZYLAB/solana-swap)
 import { SolanaTracker } from "solana-swap";                               //  [oai_citation:4‡github.com](https://github.com/YZYLAB/solana-swap) [oai_citation:5‡github.com](https://github.com/YZYLAB/solana-swap)
