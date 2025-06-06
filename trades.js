@@ -15,7 +15,8 @@ import "dotenv-vault/config";  // ← decrypt .env.vault & populate process.env
 
 import { Client as DataApiClient } from "@solana-tracker/data-api";        //  [oai_citation:3‡github.com](https://github.com/YZYLAB/solana-swap)
 import { SolanaTracker } from "solana-swap";                               //  [oai_citation:4‡github.com](https://github.com/YZYLAB/solana-swap) [oai_citation:5‡github.com](https://github.com/YZYLAB/solana-swap)
-import { Keypair } from "@solana/web3.js";  // solana-swap uses this under the hood
+import { createKeyPairFromBytes } from "@solana/keys";
+import { toLegacyKeypair } from "@solana/kit/compat";
 import bs58 from "bs58";
 
 // ───────────────────────────────────────────────────────────────────────────────
@@ -116,18 +117,19 @@ async function makeSwapClient() {
     }
     let secretKeyBytes;
     try {
-        // If it starts with '[', parse as JSON array
         if (raw.trim().startsWith("[")) {
-            const parsed = JSON.parse(raw);
-            secretKeyBytes = Uint8Array.from(parsed);
+            secretKeyBytes = Uint8Array.from(JSON.parse(raw));
         } else {
             secretKeyBytes = bs58.decode(raw.trim());
         }
     } catch {
-        // If JSON.parse fails, treat as Base58
         secretKeyBytes = bs58.decode(raw.trim());
     }
-    const keypair = Keypair.fromSecretKey(secretKeyBytes);
+    // Use @solana/keys to create a CryptoKeyPair
+    const { privateKey, publicKey } = await createKeyPairFromBytes(secretKeyBytes);
+    const cryptoKeyPair = { publicKey, privateKey };
+    // Convert to a legacy Keypair for solana-swap
+    const keypair = toLegacyKeypair(cryptoKeyPair);
     globalSwapClient = new SolanaTracker(keypair, RPC_URL);
     return globalSwapClient;
 }
