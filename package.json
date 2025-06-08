@@ -1,22 +1,13 @@
 {
   "name": "summonwarlord",
-  "version": "1.1.1",
-  "description": "The Warlord slays for your bags! ",
-  "main": "warlord-cli.js",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "buy": "node warlord-cli.js buy",
-    "sell": "node warlord-cli.js sell"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "Scooby Carolan",
+  "author": "",
   "license": "ISC",
-  "dependencies": {
-    "@solana-tracker/data-api": "^0.0.3",
-    "@solana/kit": "^2.1.1",
-    "bs58": "^5.0.0",
-    "commander": "^14.0.0",
-    "dotenv-vault": "^1.26.2",
-    "solana-swap": "^1.0.0"
-  }
+  "type": "commonjs"
 }
