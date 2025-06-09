@@ -65,7 +65,11 @@ program
       console.log("✅ Buy successful!");
       console.log(`   • TXID             : ${result.txid}`);
       console.log(`   • Tokens Purchased : ${result.tokensReceivedDecimal}`);
-      console.log(`   • Quote Details    : ${JSON.stringify(result.quote, null, 2)}`);
+      if (cfg.showQuoteDetails) {                 // ← conditional wrapper
+        console.log(
+          `   • Quote Details    : ${JSON.stringify(result.quote, null, 2)}`
+        );
+      }
     } catch (err) {
       console.error(`❌ Buy failed: ${err.message}`);
       process.exit(1);
@@ -93,7 +97,11 @@ program
       console.log("✅ Sell successful!");
       console.log(`   • TXID               : ${result.txid}`);
       console.log(`   • SOL Received       : ${result.solReceivedDecimal}`);
-      console.log(`   • Quote Details      : ${JSON.stringify(result.quote, null, 2)}`);
+      if (cfg.showQuoteDetails) {                 // ← conditional wrapper
+        console.log(
+          `   • Quote Details    : ${JSON.stringify(result.quote, null, 2)}`
+        );
+      }
     } catch (err) {
       console.error(`❌ Sell failed: ${err.message}`);
       process.exit(1);
