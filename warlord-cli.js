@@ -60,16 +60,18 @@ program
     }
 
     try {
+      const cfg = await loadConfig();
       console.log(`🚀 Warlord: Buying ${amountParam} of ${mint}...`);
       const result = await buyToken(mint, amountParam);
       console.log("✅ Buy successful!");
       console.log(`   • TXID             : ${result.txid}`);
       console.log(`   • Tokens Purchased : ${result.tokensReceivedDecimal}`);
-      if (cfg.showQuoteDetails) {                 // ← conditional wrapper
+      if (cfg.showQuoteDetails) {
         console.log(
           `   • Quote Details    : ${JSON.stringify(result.quote, null, 2)}`
-        );
-      }
+          );
+        }
+      process.exit(0);
     } catch (err) {
       console.error(`❌ Buy failed: ${err.message}`);
       process.exit(1);
@@ -92,16 +94,19 @@ program
     }
 
     try {
+      // Load config so cfg.showQuoteDetails is defined
+      const cfg = await loadConfig();
       console.log(`⚔️  Warlord: Selling ${amountParam} of ${mint}...`);
       const result = await sellToken(mint, amountParam);
       console.log("✅ Sell successful!");
       console.log(`   • TXID               : ${result.txid}`);
       console.log(`   • SOL Received       : ${result.solReceivedDecimal}`);
-      if (cfg.showQuoteDetails) {                 // ← conditional wrapper
+      if (cfg.showQuoteDetails) {
         console.log(
-          `   • Quote Details    : ${JSON.stringify(result.quote, null, 2)}`
-        );
-      }
+          `   • Quote Details      : ${JSON.stringify(result.quote, null, 2)}`
+          );
+        }
+      process.exit(0);
     } catch (err) {
       console.error(`❌ Sell failed: ${err.message}`);
       process.exit(1);
