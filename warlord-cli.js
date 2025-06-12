@@ -64,8 +64,10 @@ program
       console.log(`🚀 Warlord: Buying ${amountParam} of ${mint}...`);
       const result = await buyToken(mint, amountParam);
       console.log("✅ Buy successful!");
-      console.log(`   • TXID             : ${result.txid}`);
-      console.log(`   • Tokens Purchased : ${result.tokensReceivedDecimal}`);
+      console.log(`   • TXID              : ${result.txid}`);
+      console.log(`   • Tokens Purchased  : ${result.tokensReceivedDecimal}`);
+      console.log(`   • Price Impact      : ${result.priceImpact}`);
+      console.log(`   • Fees              : ${result.totalFees}`);
       if (cfg.showQuoteDetails) {
         console.log(
           `   • Quote Details    : ${JSON.stringify(result.quote, null, 2)}`
@@ -99,8 +101,10 @@ program
       console.log(`⚔️  Warlord: Selling ${amountParam} of ${mint}...`);
       const result = await sellToken(mint, amountParam);
       console.log("✅ Sell successful!");
-      console.log(`   • TXID               : ${result.txid}`);
-      console.log(`   • SOL Received       : ${result.solReceivedDecimal}`);
+      console.log(`   • TXID                : ${result.txid}`);
+      console.log(`   • SOL Received        : ${result.solReceivedDecimal}`);
+      console.log(`   • Price Impact        : ${result.priceImpact}`);
+      console.log(`   • Fees                : ${result.totalFees}`);
       if (cfg.showQuoteDetails) {
         console.log(
           `   • Quote Details      : ${JSON.stringify(result.quote, null, 2)}`
