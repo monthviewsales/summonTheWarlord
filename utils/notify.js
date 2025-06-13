@@ -1,3 +1,5 @@
+// Not fully implemented yet.  macOS Terminal can't issue notifications.  
+// Will be added in a later version when bundled as .app
 import { exec } from "child_process";
 
 /**
