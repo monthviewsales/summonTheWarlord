@@ -40,6 +40,54 @@ configCmd
     console.log(`✅  Updated ${key} → ${value} in ${configPath}`);
   });
 
+// SETUP command – interactive setup wizard
+program
+  .command("setup")
+  .description("Run interactive setup for config and keychain")
+  .action(async () => {
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+
+    const ask = (question) => new Promise((resolve) => rl.question(question, (answer) => resolve(answer.trim())));
+
+    const configPath = getConfigPath();
+    const cfg = await loadConfig();
+
+    console.log("⚙️  Warlord CLI Setup\n");
+
+    // Slippage
+    const slippage = await ask(`Enter max slippage % [${cfg.slippage}]: `);
+    if (slippage) cfg.slippage = parseFloat(slippage);
+
+    // API Key
+    const swapAPIKey = await ask(`Enter Swap API Key [${cfg.swapAPIKey}]: `);
+    if (swapAPIKey) cfg.swapAPIKey = swapAPIKey;
+
+    // RPC URL
+    const rpcUrl = await ask(`Enter RPC URL [${cfg.rpcUrl}]: `);
+    if (rpcUrl) cfg.rpcUrl = rpcUrl;
+
+    // Quote Details
+    const quoteDetail = await ask(`Show quote details in output? (y/N): `);
+    cfg.showQuoteDetails = quoteDetail.toLowerCase() === "y";
+
+    await saveConfig(cfg);
+    console.log(`✅ Config saved to ${configPath}`);
+
+    // Private key
+    const storeKey = await ask("Would you like to store your private key in the macOS Keychain now? (y/N): ");
+    if (storeKey.toLowerCase() === "y") {
+      const privKey = await ask("Paste your private key: ");
+      await storePrivateKey(privKey);
+      console.log("🔐 Private key stored securely.");
+    }
+
+    rl.close();
+    console.log("🧠 Setup complete.");
+  });
+
 // KEYCHAIN subcommands
 const keychainCmd = program.command("keychain").description("Manage private key storage in macOS Keychain");
 
