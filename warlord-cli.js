@@ -2,6 +2,8 @@
 import { Command } from "commander";
 import { getConfigPath, loadConfig, saveConfig, editConfig } from "./lib/config.js";
 import { buyToken, sellToken } from "./lib/trades.js";
+import { storePrivateKey, getPrivateKey, deletePrivateKey } from "./lib/keychain.js";
+import readline from "readline";
 
 const program = new Command();
 program.name("warlord")
@@ -36,6 +38,45 @@ configCmd
     cfg[key] = isNaN(Number(value)) ? value : Number(value);
     await saveConfig(cfg);
     console.log(`✅  Updated ${key} → ${value} in ${configPath}`);
+  });
+
+// KEYCHAIN subcommands
+const keychainCmd = program.command("keychain").description("Manage private key storage in macOS Keychain");
+
+keychainCmd
+  .command("store")
+  .description("Store private key securely in macOS Keychain")
+  .action(() => {
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+    rl.question("Paste your wallet private key: ", async (input) => {
+      rl.close();
+      await storePrivateKey(input.trim());
+      console.log("🔐 Private key securely stored in macOS Keychain.");
+    });
+  });
+
+keychainCmd
+  .command("unlock")
+  .description("Test retrieval of private key from macOS Keychain")
+  .action(async () => {
+    try {
+      const key = await getPrivateKey();
+      console.log("🔓 Private key retrieved successfully.");
+      // You can optionally cache it or mark session-ready
+    } catch (err) {
+      console.error("❌ Failed to retrieve key:", err.message);
+    }
+  });
+
+keychainCmd
+  .command("delete")
+  .description("Delete the private key from macOS Keychain")
+  .action(async () => {
+    await deletePrivateKey();
+    console.log("💥 Private key deleted from macOS Keychain.");
   });
 
 // BUY command – supports numeric, “auto”, or “<percent>%”
