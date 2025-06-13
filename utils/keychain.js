@@ -1,4 +1,4 @@
-const keytar = require('keytar');
+import keytar from 'keytar';
 
 const SERVICE = 'summonTheWarlord';
 const ACCOUNT = 'wallet-private-key';
@@ -31,8 +31,4 @@ async function deletePrivateKey() {
     console.log('💥 Private key removed from macOS Keychain.');
 }
 
-module.exports = {
-    storePrivateKey,
-    getPrivateKey,
-    deletePrivateKey,
-};
+export { storePrivateKey, getPrivateKey, deletePrivateKey };
