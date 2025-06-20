@@ -1,6 +1,6 @@
 {
   "name": "summonTheWarlord",
-  "version": "0.4.2",
+  "version": "1.0.0",
   "type": "module",
   "main": "warlord-cli.js",
   "bin": {
