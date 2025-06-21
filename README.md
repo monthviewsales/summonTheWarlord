@@ -1,126 +1,125 @@
+## 🧙‍♂️ summonWarlord
 
+> ⚠️ **First time using a CLI tool or Solana wallet?** No worries—this guide walks you through each step. You’ll need a free account on [SolanaTracker](https://www.solanatracker.io/solana-rpc?via=scoobycarolan) to get an RPC URL and API Key, and we’ll show you how to securely set up your wallet using macOS Keychain.
 
-# summonTheWarlord
+**summonWarlord** is a CLI tool for executing token trades on Solana DEXes with speed and precision, designed for power users and bots.
 
-*“In the ashes of a burned world, only the strong—and the prepared—survive.”*  
-— Warlord Fuckboi, Time-Stranded Commander
+### Features
 
----
+- Lightning-fast token trades (buy/sell) on Solana
+- Unified trade command for both directions
+- "Auto" sell logic (stop-loss, trailing stop, etc)
+- Percent-based sells
+- Human-readable output
 
-## 📜 Introduction
+## ⚡️ Quickstart
 
-You are holding the keys to the past—and the future. I am **Warlord Fuckboi**, a battle-scarred survivor from the wasteland of 2157. I built this CLI to harvest Solana and memecoins in your era, so that when I return to the ravaged future, I’ll have ammo, fuel, and dignity to buy my next ration of bullets.
+1. **Clone the repo**
 
-This document will guide you—my chosen recruit—through installing, configuring, and wielding the power of **summonTheWarlord**.
+```bash
+git clone https://github.com/your-username/summonTheWarlord.git
+cd summonTheWarlord
+```
 
----
+2. **Install dependencies**
 
-## ⚔️ Features
+```bash
+npm install
+```
 
-- **Time-Warp Trading**: Buy and sell SPL tokens on Solana with lightning speed.  
-- **Configurable Arsenal**: Set your slippage, priority fees, and transaction version.  
-- **Memecoin Cache**: Keep track of your holdings—like ammo in your scavenged pack.  
-- **Wasteland PnL Reports**: Know exactly how many rounds (SOL) you gained or lost.  
-- **Single Binary**: A lean, battle-hardened CLI—no heavy frameworks or dependencies.
+3. **Make the CLI globally accessible**
 
----
+If you'd like to run `warlord` from anywhere:
 
-## 🛠 Requirements
+```bash
+chmod +x warlord-cli.js
+```
 
-- **macOS / Linux** (tested on macOS 12+ & Ubuntu 20.04+)
-- **Node.js** v16.x or later
-- **npm** (comes bundled with Node.js)
-- A funded **Solana wallet keypair** (exported as JSON array or Base58 string)
-- Network access to a **Solana RPC** endpoint
+Then add this line to your `.zshrc` (macOS default shell):
 
----
+```bash
+export PATH="$PATH:/path/to/summonTheWarlord"
+```
 
-## 📦 Installation
+Replace `/path/to/summonTheWarlord` with the full path to the directory you cloned.
 
-1. **Clone the repo**  
-   ```bash
-   git clone https://github.com/username/summonTheWarlord.git
-   cd summonTheWarlord
-   ```
+After saving `.zshrc`, reload your shell:
 
-2. **Install dependencies**  
-   ```bash
-   npm install commander fs-extra axios bs58 @solana/web3.js
-   ```
+```bash
+source ~/.zshrc
+```
 
-3. **Make the CLI globally available**  
-   ```bash
-   chmod +x warlord-cli.js
-   npm link
-   ```
+Alternatively, you can use:
 
-   Now you can run `warlord` from anywhere.
+```bash
+npm link
+```
 
----
+To symlink the CLI globally (handy for development).
 
-## ⚙️ Configuration
+4. **Run initial setup**
 
-Before mounting your campaigns, configure your arsenal:
+Run the interactive setup wizard:
 
-1. **Initialize or view your config**  
-   ```bash
-   warlord config view
-   ```
-   On first run, this creates your config file at:
-   - `~/Library/Application Support/summonTheWarlord/config.json` (macOS)  
-   - `~/.config/summonTheWarlord/config.json` (Linux)
+```bash
+warlord setup
+```
 
-   Default contents:
-   ```json
-   {
-     "walletSecretKey": "",
-     "rpcUrl": "https://api.mainnet-beta.solana.com",
-     "slippage": 10,
-     "priorityFee": "auto",
-     "priorityFeeLevel": "medium",
-     "txVersion": "v0"
-   }
-   ```
+This will walk you through setting slippage, API key, RPC URL, public wallet address, and optionally store your private key in the macOS Keychain for safety.
 
-2. **Set your private key**  
-   ```bash
-   warlord config set walletSecretKey "<your-Base58-or-JSON-array>"
-   ```
+5. **Check your balance and available tokens**:
 
-3. **Customize your battle settings**  
-   ```bash
-   warlord config set rpcUrl https://api.devnet.solana.com
-   warlord config set slippage 25
-   warlord config set priorityFee 0.000005
-   warlord config set priorityFeeLevel high
-   warlord config set txVersion legacy
-   ```
+```bash
+warlord balances
+```
 
-4. **Edit manually**  
-   ```bash
-   warlord config edit
-   ```
-   (Opens the JSON in your `$EDITOR`.)
+6. **Find a token mint address** (e.g., via [SolanaTracker.io Memescope](https://www.solanatracker.io/memescope) or your favorite explorer).
 
----
+## 🔐 Using the macOS Keychain
+
+We strongly recommend macOS users store their private key in the system Keychain instead of writing it into any config files.
+
+- To store your key:
+  ```bash
+  warlord keychain store
+  ```
+
+  Paste your private key (Base58 string or full JSON array) when prompted.
+
+- To verify it was saved:
+  ```bash
+  warlord keychain unlock
+  ```
+
+- To remove the key:
+  ```bash
+  warlord keychain delete
+  ```
+
+This helps keep your wallet safe while still allowing the CLI to sign transactions.
 
 ## 🚀 Usage
 
-Once configured, you can execute two primary commands:
+Once configured, you can execute trades using a unified command with only a .9% fee!  Thats lower than any web platform out there:
 
-### Buy Memecoins
+### Trade Command
 
 ```bash
-warlord buy <MINT_ADDRESS> <AMOUNT_SOL>
+warlord trade <MINT_ADDRESS> <buy|sell> <AMOUNT?>
 ```
 
-- **`<MINT_ADDRESS>`**: The SPL token mint to purchase.  
-- **`<AMOUNT_SOL>`**: Amount of SOL (decimal) to spend.
+- **`<MINT_ADDRESS>`**: The SPL token mint you want to trade.
+- **`buy` / `-b`** or **`sell` / `-s`**: Direction of trade.
+- **`<AMOUNT?>`**:
+  - For **buys**: Amount of SOL to spend (e.g., `0.25`, `1.5`)
+  - For **sells**: Accepts:
+    - A percent of holdings (e.g., `25`, `100`)
+    - `auto` to let the bot decide (based on internal logic it sells all)
 
-**Example:**
+### 🔼 Buy Example
 
 ```bash
-warlord buy So11111111111111111111111111111111111111112 0.5
+warlord trade So11111111111111111111111111111111111111112 buy 0.5
 ```
 
 *Output:*
@@ -135,21 +134,19 @@ warlord buy So11111111111111111111111111111111111111112 0.5
    • Unrealized PnL   : 0.05 SOL
 ```
 
-### Sell Your Haul
+### 🔽 Sell Example (percent)
 
 ```bash
-warlord sell <MINT_ADDRESS> <PERCENT>
+warlord trade FvVJ6RCr1XH8hvZbzx4pH45ab24NNUhWjgTKvGcuVYHD sell 25%
 ```
 
-- **`<PERCENT>`**: Percentage (0–100) of your holdings to offload.
-
-**Example:**
+### 🔽 Sell Example (auto)
 
 ```bash
-warlord sell FvVJ6RCr1XH8hvZbzx4pH45ab24NNUhWjgTKvGcuVYHD 25
+warlord trade FvVJ6RCr1XH8hvZbzx4pH45ab24NNUhWjgTKvGcuVYHD sell auto
 ```
 
-*Output:*
+*Output (example for sell):*
 
 ```
 ⚔️  Warlord: Selling 25% of FvVJ6R…...
@@ -161,23 +158,56 @@ warlord sell FvVJ6RCr1XH8hvZbzx4pH45ab24NNUhWjgTKvGcuVYHD 25
    • Remaining Holding  : 925.92593
 ```
 
----
+## 🧰 Config Commands
 
-## 🎖 Troubleshooting
+View, edit, or set your CLI configuration.
 
-- **Invalid key error**: Ensure `walletSecretKey` is exactly your 64-byte JSON array or Base58 string.  
-- **RPC connection issues**: Check `rpcUrl` in your config and your network firewall.  
-- **Insufficient funds**: Confirm your wallet has enough SOL for both trade and transaction fees.  
-- **Slippage errors**: If a swap fails, increase `slippage` in your config (e.g., 50 = 0.50%).
+### View Config
 
----
+```bash
+warlord config view
+```
 
-## 📝 License
+Displays your current config file location and contents.
 
-Released into the wasteland under the [MIT License](LICENSE).  
-Carry this code with honor, or burn it with the rest.
+### Edit Config
 
----
+```bash
+warlord config edit
+```
 
-*“The bones of the old world will feed the new.”*  
-— Warlord Fuckboi, signing off from the sandstorms of tomorrow.
+Opens your config file in your system `$EDITOR`.
+
+### Set Config Key
+
+Supported keys include `slippage`, `rpcUrl`, `swapAPIKey`, and `priorityFee`.
+
+```bash
+warlord config set swapAPIKey YOUR-API-KEY
+```
+
+Updates a single config key. Example:
+
+```bash
+warlord config set slippage 25
+```
+
+## 🔑 Wallet Command
+
+Open your wallet in the browser on SolanaTracker.io:
+
+```bash
+warlord wallet
+```
+
+This fetches your stored private key from the macOS Keychain, derives the public key, and opens your wallet view in a browser tab.
+
+## 🧪 Need Help?
+
+If something doesn’t work:
+- Double-check your RPC URL and API key from SolanaTracker.
+- Make sure your wallet has SOL for gas.
+- Use `warlord config view` to confirm your settings.
+- Run `warlord setup` again to reconfigure.
+
+Still stuck? Reach out to the Warlord’s trench crew.

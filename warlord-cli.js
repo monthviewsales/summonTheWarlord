@@ -140,7 +140,7 @@ keychainCmd
 program
   .command("trade <mint>")
   .description("Trade a specific token")
-  .option("-b, --buy <amount>", "Spend <amount> SOL (number, 'auto', or '<percent>%') to buy token")
+  .option("-b, --buy <amount>", "Spend <amount> SOL (number or '<percent>%') to buy token")
   .option("-s, --sell <amount>", "Sell <amount> tokens (number, 'auto', or '<percent>%')")
   .action(async (mint, options) => {
     const cfg = await loadConfig();
@@ -150,7 +150,7 @@ program
       if (amountParam !== "auto" && !amountParam.endsWith("%")) {
         const num = parseFloat(amountParam);
         if (isNaN(num) || num <= 0) {
-          console.error("⚠️  Invalid amount. Use a positive number, 'auto', or '<percent>%'.");
+          console.error("⚠️  Invalid amount. Use a positive number, 'auto' during a sell, or '<percent>%'.");
           process.exit(1);
         }
         amountParam = num;
