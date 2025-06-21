@@ -11,6 +11,7 @@
 - "Auto" sell logic (stop-loss, trailing stop, etc)
 - Percent-based sells
 - Human-readable output
+- 0.9% trading fee lower than all web based tools.  Use this along side Axiom or GMGN 
 
 ## ⚡️ Quickstart
 
