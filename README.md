@@ -137,7 +137,7 @@ warlord trade So11111111111111111111111111111111111111112 buy 0.5
 ### 🔽 Sell Example (percent)
 
 ```bash
-warlord trade FvVJ6RCr1XH8hvZbzx4pH45ab24NNUhWjgTKvGcuVYHD sell 25
+warlord trade FvVJ6RCr1XH8hvZbzx4pH45ab24NNUhWjgTKvGcuVYHD sell 25%
 ```
 
 ### 🔽 Sell Example (auto)
