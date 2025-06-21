@@ -89,7 +89,7 @@ Before mounting your campaigns, configure your arsenal:
 
 3. **Customize your battle settings**  
    ```bash
-   warlord config set rpcUrl https://api.devnet.solana.com
+   warlord config set rpcUrl https://swap-v2.solanatracker.io/swap
    warlord config set slippage 25
    warlord config set priorityFee 0.000005
    warlord config set priorityFeeLevel high
