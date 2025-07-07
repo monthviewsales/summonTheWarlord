@@ -3,7 +3,6 @@ import { Command } from "commander";
 import { getConfigPath, loadConfig, saveConfig, editConfig } from "./lib/config.js";
 import { buyToken, sellToken } from "./lib/trades.js";
 import { storePrivateKey, getPrivateKey, deletePrivateKey } from "./utils/keychain.js";
-import readline from "readline";
 import open from "open";
 
 const program = new Command();

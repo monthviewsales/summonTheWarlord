@@ -1,0 +1,16 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      # Check daily; you can also use "weekly" or "monthly"
+      interval: "daily"
+      # UTC time to run the check (e.g. 03:00 UTC)
+      time: "03:00"
+    # Limit to 5 open PRs at a time
+    open-pull-requests-limit: 5
+    # Optional: ignore certain dependencies
+    # ignore:
+    #   - dependency-name: "express"
+    #     versions:
+    #       - "5.x"
