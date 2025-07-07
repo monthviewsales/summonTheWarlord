@@ -17,6 +17,6 @@
     "fs-extra": "^11.3.0",
     "keytar": "^7.9.0",
     "open": "^8.4.0",
-    "solana-swap": "^1.2.1"
+    "solana-swap": "1.2.2"
   }
 }
