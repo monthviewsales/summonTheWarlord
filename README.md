@@ -13,6 +13,10 @@
 - Human-readable output
 - 0.9% trading fee lower than all web based tools.  Use this along side Axiom or GMGN 
 
+### Known Issues
+
+ - Swaps for coins on LetsBonk.fun will probably error out.  Fix is on the way!
+
 ## ⚡️ Quickstart
 
 1. **Clone the repo**
