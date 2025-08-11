@@ -1,5 +1,7 @@
 ## 🧙‍♂️ summonWarlord
 
+**Version:** 1.4.0
+
 > ⚠️ **First time using a CLI tool or Solana wallet?** No worries—this guide walks you through each step. You’ll need a free account on [SolanaTracker](https://www.solanatracker.io/solana-rpc?via=scoobycarolan) to get an RPC URL and API Key, and we’ll show you how to securely set up your wallet using macOS Keychain.
 
 **summonWarlord** is a CLI tool for executing token trades on Solana DEXes with speed and precision, designed for power users and bots.
@@ -12,6 +14,9 @@
 - Percent-based sells
 - Human-readable output
 - 0.9% trading fee lower than all web based tools.  Use this along side Axiom or GMGN 
+- macOS notifications for trade results and during setup to confirm permissions
+- Secure key storage with overwrite detection in setup
+- Performance improvements via lazy-loading and memoization with retry-safe client creation
 
 ### Known Issues
 
@@ -70,7 +75,7 @@ Run the interactive setup wizard:
 warlord setup
 ```
 
-This will walk you through setting slippage, API key, RPC URL, public wallet address, and optionally store your private key in the macOS Keychain for safety.
+This will walk you through setting slippage, API key, RPC URL, public wallet address, and optionally store your private key in the macOS Keychain for safety. At the end of setup, a test macOS notification will be sent to confirm permissions.
 
 5. **Check your balance and available tokens**:
 
@@ -100,6 +105,8 @@ We strongly recommend macOS users store their private key in the system Keychain
   ```bash
   warlord keychain delete
   ```
+
+During setup, the tool will detect if a key is already stored in the Keychain and prompt you to replace it if desired.
 
 This helps keep your wallet safe while still allowing the CLI to sign transactions.
 
@@ -216,3 +223,5 @@ If something doesn’t work:
 - Run `warlord setup` again to reconfigure.
 
 Still stuck? Reach out to the Warlord’s trench crew.
+
+If notifications don't appear, check System Settings → Notifications and allow alerts for "Script Editor" (osascript).

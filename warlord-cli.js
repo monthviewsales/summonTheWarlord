@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 import { Command } from "commander";
 import { getConfigPath, loadConfig, saveConfig, editConfig } from "./lib/config.js";
-import { buyToken, sellToken } from "./lib/trades.js";
-import { storePrivateKey, getPrivateKey, deletePrivateKey } from "./utils/keychain.js";
-import open from "open";
+import { storePrivateKey, getPrivateKey, deletePrivateKey, hasPrivateKey } from "./utils/keychain.js";
+import readline from "readline";
+import { notify } from "./utils/notify.js";
 
 const program = new Command();
 program.name("warlord")
@@ -85,15 +85,41 @@ program
     console.log(`✅ Config saved to ${configPath}`);
 
     // Private key
-    const storeKey = await ask("Would you like to store your private key in the macOS Keychain now? (y/N): ");
-    if (storeKey.toLowerCase() === "y") {
-      const privKey = await ask("Paste your private key: ");
-      await storePrivateKey(privKey);
-      console.log("🔐 Private key stored securely.");
+    try {
+      if (await hasPrivateKey()) {
+        const updateKey = await ask("🔓 Private key already stored in Keychain. Would you like to replace it? (y/N): ");
+        if (updateKey.toLowerCase() === "y") {
+          const privKey = await ask("Paste your new private key: ");
+          await storePrivateKey(privKey);
+          console.log("🔐 Private key updated.");
+        } else {
+          console.log("✅ Keeping existing private key.");
+        }
+      } else {
+        const storeKey = await ask("Would you like to store your private key in the macOS Keychain now? (y/N): ");
+        if (storeKey.toLowerCase() === "y") {
+          const privKey = await ask("Paste your private key: ");
+          await storePrivateKey(privKey);
+          console.log("🔐 Private key stored securely.");
+        } else {
+          console.log("⚠️ No private key stored. You can add one later with `warlord keychain store`.");
+        }
+      }
+    } catch (e) {
+      console.error("❌ Keychain error:", e.message);
     }
 
     rl.close();
     console.log("🧠 Setup complete.");
+
+    // Test macOS notifications so users can allow permissions now
+    notify({
+      title: "summonTheWarlord",
+      subtitle: "Setup complete",
+      message: "If you see this, notifications are enabled.",
+      sound: "Ping",
+    });
+    console.log("🔔 Test notification sent. If you see it, notifications are enabled.");
   });
 
 // KEYCHAIN subcommands
@@ -144,6 +170,15 @@ program
   .action(async (mint, options) => {
     const cfg = await loadConfig();
 
+    // Lazy-load heavy trade functions only when needed
+    let _tradeModule;
+    const getTradeModule = async () => {
+      if (!_tradeModule) {
+        _tradeModule = await import("./lib/trades.js");
+      }
+      return _tradeModule;
+    };
+
     const executeTrade = async (type, amountArg) => {
       let amountParam = amountArg.toString().toLowerCase();
       if (amountParam !== "auto" && !amountParam.endsWith("%")) {
@@ -158,6 +193,7 @@ program
       try {
         if (type === "buy") {
           console.log(`🚀 Warlord: Buying ${amountParam} of ${mint}...`);
+          const { buyToken } = await getTradeModule();
           const result = await buyToken(mint, amountParam);
           console.log("✅ Buy successful!");
           console.log(`   • TXID              : ${result.txid}`);
@@ -169,6 +205,7 @@ program
           }
         } else if (type === "sell") {
           console.log(`⚔️  Warlord: Selling ${amountParam} of ${mint}...`);
+          const { sellToken } = await getTradeModule();
           const result = await sellToken(mint, amountParam);
           console.log("✅ Sell successful!");
           console.log(`   • TXID                : ${result.txid}`);
@@ -196,14 +233,17 @@ program
     }
   });
 
-import { Keypair } from "@solana/web3.js";
-import bs58 from "bs58";
-
 program
   .command("wallet")
   .alias("w")
   .description("Open your wallet in the browser via SolanaTracker.io")
   .action(async () => {
+      // Lazy-load heavier deps only when wallet command runs
+      const [{ Keypair }, { default: bs58 }, { default: open }] = await Promise.all([
+        import("@solana/web3.js"),
+        import("bs58"),
+        import("open"),
+      ]);
     try {
       const rawKey = await getPrivateKey();
       let keypair;
