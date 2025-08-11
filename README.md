@@ -17,6 +17,21 @@
 - macOS notifications for trade results and during setup to confirm permissions
 - Secure key storage with overwrite detection in setup
 - Performance improvements via lazy-loading and memoization with retry-safe client creation
+- Supported DEXs
+
+    Raydium
+    Raydium CPMM
+    Pump.fun
+    Pump.fun AMM
+    Raydium Launchoad
+    MoonIt
+    Letsbonk.fun
+    Jupiter Studio
+    Believe
+    Meteora Dynamic
+    Moonshot
+    Orca
+    Jupiter (Private Self-Hosted API)
 
 ## ⚡️ Quickstart
 
