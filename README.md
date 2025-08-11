@@ -18,10 +18,6 @@
 - Secure key storage with overwrite detection in setup
 - Performance improvements via lazy-loading and memoization with retry-safe client creation
 
-### Known Issues
-
- - Swaps for coins on LetsBonk.fun will probably error out.  Fix is on the way!
-
 ## ⚡️ Quickstart
 
 1. **Clone the repo**
