@@ -19,19 +19,19 @@
 - Performance improvements via lazy-loading and memoization with retry-safe client creation
 - Supported DEXs
 
-    Raydium
-    Raydium CPMM
-    Pump.fun
-    Pump.fun AMM
-    Raydium Launchoad
-    MoonIt
-    Letsbonk.fun
-    Jupiter Studio
-    Believe
-    Meteora Dynamic
-    Moonshot
-    Orca
-    Jupiter (Private Self-Hosted API)
+    Raydium,
+    Raydium CPMM,
+    Pump.fun,
+    Pump.fun AMM,
+    Raydium Launchpad,
+    MoonIt,
+    Letsbonk.fun,
+    Jupiter Studio,
+    Believe,
+    Meteora Dynamic,
+    Moonshot,
+    Orca,
+    Jupiter (Private Self-Hosted API),
 
 ## ⚡️ Quickstart
 
