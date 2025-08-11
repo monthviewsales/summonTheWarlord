@@ -1,4 +1,4 @@
-## 🧙‍♂️ summonWarlord
+## 🧙‍♂️ summonTheWarlord
 
 **Version:** 1.4.0
 
