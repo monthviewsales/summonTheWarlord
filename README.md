@@ -1,6 +1,20 @@
-## 🧙‍♂️ summonTheWarlord
+## Requirements
 
-**Version:** 1.4.0
+- A [SolanaTracker.io](https://www.solanatracker.io/?ref=0NGJ5PPN) account (used for RPC and API access).   
+
+# summonTheWarlord — a VAULT77 🔐77 relic
+
+**Version:** 1.4.2
+
+> *Unearthed from VAULT77, summonTheWarlord is relic software for trench operators.  
+> It executes trades with speed, precision, and keeps the link open to save our futures.*
+
+---
+## 📡 Connect with VAULT77
+
+- **VAULT77 Community**: [Join on X](https://x.com/i/communities/1962257350309650488)  
+- **Telegram (Community)**: [@BurnWalletBroadcast](https://t.me/BurnWalletBroadcast)  
+> Join VAULT77 🔐77 and become part of the operator network.
 
 > ⚠️ **First time using a CLI tool or Solana wallet?** No worries—this guide walks you through each step. You’ll need a free account on [SolanaTracker](https://www.solanatracker.io/solana-rpc?via=scoobycarolan) to get an RPC URL and API Key, and we’ll show you how to securely set up your wallet using macOS Keychain.
 
@@ -32,6 +46,8 @@
     Moonshot,
     Orca,
     Jupiter (Private Self-Hosted API),
+    Heaven,
+    Others added all the time!
 
 ## ⚡️ Quickstart
 
