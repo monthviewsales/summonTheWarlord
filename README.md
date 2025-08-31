@@ -249,6 +249,6 @@ If something doesn’t work:
 - Use `warlord config view` to confirm your settings.
 - Run `warlord setup` again to reconfigure.
 
-Still stuck? Reach out to the Warlord’s trench crew.
+Still stuck? Reach out to the Warlord’s trench crew in [VAULT77 on X](https://x.com/i/communities/1962257350309650488)
 
 If notifications don't appear, check System Settings → Notifications and allow alerts for "Script Editor" (osascript).
