@@ -16,7 +16,7 @@
 - **Telegram (Community)**: [@BurnWalletBroadcast](https://t.me/BurnWalletBroadcast)  
 > Join VAULT77 🔐77 and become part of the operator network.
 
-> ⚠️ **First time using a CLI tool or Solana wallet?** No worries—this guide walks you through each step. You’ll need a free account on [SolanaTracker](https://www.solanatracker.io/solana-rpc?via=scoobycarolan) to get an RPC URL and API Key, and we’ll show you how to securely set up your wallet using macOS Keychain.
+> ⚠️ **First time using a CLI tool or Solana wallet?** No worries—this guide walks you through each step. You’ll need a free account on [SolanaTracker](https://www.solanatracker.io/?ref=0NGJ5PPN) to get an RPC URL and API Key, and we’ll show you how to securely set up your wallet using macOS Keychain.
 
 **summonWarlord** is a CLI tool for executing token trades on Solana DEXes with speed and precision, designed for power users and bots.
 
