@@ -6,8 +6,10 @@ import readline from "readline";
 import { notify } from "./utils/notify.js";
 
 const program = new Command();
-program.name("warlord")
-  .description("Summon the Warlord Solana CLI");
+program
+  .name("warlord")
+  .description("Summon the Warlord Solana CLI")
+  .showHelpAfterError(); // show help after invalid flags/args
 
 // CONFIG subcommands
 const configCmd = program.command("config").description("Manage CLI configuration");
@@ -18,8 +20,16 @@ configCmd
   .action(async () => {
     const configPath = getConfigPath();
     const cfg = await loadConfig();
+
+    // redact API key to avoid screen-share leaks
+    const redacted = { ...cfg };
+    if (redacted.swapAPIKey && typeof redacted.swapAPIKey === "string") {
+      const tail = redacted.swapAPIKey.slice(-4);
+      redacted.swapAPIKey = `************${tail}`;
+    }
+
     console.log(`Config file: ${configPath}\n`);
-    console.log(JSON.stringify(cfg, null, 2));
+    console.log(JSON.stringify(redacted, null, 2));
   });
 
 configCmd
@@ -50,7 +60,7 @@ program
       output: process.stdout,
     });
 
-    const ask = (question) => new Promise((resolve) => rl.question(question, (answer) => resolve(answer.trim())));
+    const ask = (q) => new Promise((resolve) => rl.question(q, (answer) => resolve(answer.trim())));
 
     const configPath = getConfigPath();
     const cfg = await loadConfig();
@@ -113,13 +123,17 @@ program
     console.log("🧠 Setup complete.");
 
     // Test macOS notifications so users can allow permissions now
-    notify({
-      title: "summonTheWarlord",
-      subtitle: "Setup complete",
-      message: "If you see this, notifications are enabled.",
-      sound: "Ping",
-    });
-    console.log("🔔 Test notification sent. If you see it, notifications are enabled.");
+    try {
+      notify({
+        title: "summonTheWarlord",
+        subtitle: "Setup complete",
+        message: "If you see this, notifications are enabled.",
+        sound: "Ping",
+      });
+      console.log("🔔 Test notification sent. If you see it, notifications are enabled.");
+    } catch {
+      console.warn("⚠️ Unable to send test notification. You may need to enable notifications for your terminal.");
+    }
   });
 
 // KEYCHAIN subcommands
@@ -146,8 +160,7 @@ keychainCmd
   .action(async () => {
     try {
       const key = await getPrivateKey();
-      console.log("🔓 Private key retrieved successfully.");
-      // You can optionally cache it or mark session-ready
+      if (key) console.log("🔓 Private key retrieved successfully.");
     } catch (err) {
       console.error("❌ Failed to retrieve key:", err.message);
     }
@@ -170,6 +183,12 @@ program
   .action(async (mint, options) => {
     const cfg = await loadConfig();
 
+    // basic mint sanity check (cheap guard before calling SDK)
+    if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(mint)) {
+      console.error("⚠️  Invalid mint format. Expected base58 address (32–44 chars).");
+      process.exit(1);
+    }
+
     // Lazy-load heavy trade functions only when needed
     let _tradeModule;
     const getTradeModule = async () => {
@@ -180,7 +199,9 @@ program
     };
 
     const executeTrade = async (type, amountArg) => {
-      let amountParam = amountArg.toString().toLowerCase();
+      // normalize: trim spaces and collapse whitespace (accepts "50 %")
+      let amountParam = amountArg.toString().trim().toLowerCase().replace(/\s+/g, "");
+
       if (amountParam !== "auto" && !amountParam.endsWith("%")) {
         const num = parseFloat(amountParam);
         if (isNaN(num) || num <= 0) {
@@ -192,6 +213,12 @@ program
 
       try {
         if (type === "buy") {
+          // block 'auto' on buys to match SDK behavior
+          if (amountParam === "auto") {
+            console.error("⚠️  Buying with 'auto' isn’t supported. Use a number or '<percent>%'.");
+            process.exit(1);
+          }
+
           console.log(`🚀 Warlord: Buying ${amountParam} of ${mint}...`);
           const { buyToken } = await getTradeModule();
           const result = await buyToken(mint, amountParam);
@@ -201,7 +228,7 @@ program
           console.log(`   • Price Impact      : ${result.priceImpact}`);
           console.log(`   • Fees              : ${result.totalFees}`);
           if (cfg.showQuoteDetails) {
-            console.log(`   • Quote Details    : ${JSON.stringify(result.quote, null, 2)}`);
+            console.log(`   • Quote Details     : ${JSON.stringify(result.quote, null, 2)}`);
           }
         } else if (type === "sell") {
           console.log(`⚔️  Warlord: Selling ${amountParam} of ${mint}...`);
@@ -238,12 +265,12 @@ program
   .alias("w")
   .description("Open your wallet in the browser via SolanaTracker.io")
   .action(async () => {
-      // Lazy-load heavier deps only when wallet command runs
-      const [{ Keypair }, { default: bs58 }, { default: open }] = await Promise.all([
-        import("@solana/web3.js"),
-        import("bs58"),
-        import("open"),
-      ]);
+    // Lazy-load heavier deps only when wallet command runs
+    const [{ Keypair }, { default: bs58 }, { default: open }] = await Promise.all([
+      import("@solana/web3.js"),
+      import("bs58"),
+      import("open"),
+    ]);
     try {
       const rawKey = await getPrivateKey();
       let keypair;
@@ -319,14 +346,14 @@ USAGE:
 
 NOTES:
   • This tool relies on SolanaTracker.io as its backend and won't work without them.
-      You can use the default RPC URL, but may see errors and issues because its free & public.
-      Signup for a free account here: https://www.solanatracker.io/solana-rpc 
+      You can use the default RPC URL, but may see errors and issues because it’s free & public.
+      Signup for a free account here: https://www.solanatracker.io/solana-rpc
       Use the new URL you are assigned in the config file.
   • You may see errors about rate limits.  This is largely due to using the free endpoint,
-      but they do happen occasionally.  You trade may still go through because those errors happen
+      but they do happen occasionally.  Your trade may still go through because those errors happen
       while we're waiting for trade confirmation.
   • You may use either --buy/-b or --sell/-s flags
-  • Buying with "auto" is not supported — use a number or percent
+  • Buying with "auto" is NOT supported — use a number or percent
   • Your private key is never stored in plain text — use the Keychain for secure access
   • Quote details can be toggled in config or during setup
   • Always confirm transactions via returned TXID and fees
