@@ -5,7 +5,7 @@
 
 # summonTheWarlord — a VAULT77 🔐77 relic
 
-**Version:** 1.4.3
+**Version:** 1.4.4
 
 > *Relic software unearthed from VAULT77.  
 > For trench operators only. macOS-native. Handle with care.*  
@@ -41,10 +41,88 @@ No worries — this guide walks you through each step. You’ll need a free acco
 
 ---
 
-## ⚡️ Quickstart
+## ⚡️ Step-by-Step Quickstart Guide
 
-1. **Clone the repo**
+Welcome, Operator. The Warlord awaits your command.  
+Follow these steps to unlock the power of this VAULT77 relic and execute trades at the speed of the trenches.
+
+### 1. Clone the Repository
+
+First, retrieve the relic from the vault:
 
 ```bash
 git clone https://github.com/your-username/summonTheWarlord.git
 cd summonTheWarlord
+```
+
+### 2. Install Dependencies
+
+Let Node.js prepare your terminal for battle.  
+Run this command in the project directory:
+
+```bash
+npm install
+```
+
+### 3. Set Up Your Environment
+
+You’ll need a `.env` file in the project root to connect to Solana and the Warlord’s command lines.  
+Create a `.env` file (you can copy `.env.example` if provided) and add your credentials:
+
+```env
+SOLANATRACKER_API_KEY=your_solanatracker_api_key_here
+SOLANATRACKER_RPC=https://your-rpc-url.solanatracker.io
+```
+
+> **How to get these?**  
+> - Create a free account at [SolanaTracker.io](https://www.solanatracker.io/?ref=0NGJ5PPN)  
+> - Find your API key and RPC URL in your dashboard.
+
+**Wallet Keypair:**  
+On first run, your Solana wallet keypair will be generated and stored securely in your macOS Keychain.  
+No private keys are ever written to disk.  
+
+### 4. First Run: Initialize Your Wallet & Permissions
+
+Summon the Warlord and set up your operator credentials:
+
+```bash
+node warlord-cli.js setup
+```
+
+This will:
+- Guide you through wallet creation or import.
+- Store your keypair in the macOS Keychain.
+- Request notification permissions from macOS (approve to receive trade alerts).
+
+### 5. Trade Examples
+
+Once setup is complete, you’re ready to trade from the trenches.
+
+- **Buy a token using 0.1 SOL:**
+  ```bash
+  node warlord-cli.js trade <TOKEN_MINT> -b 0.1
+  ```
+  Replace `<TOKEN_MINT>` with the token’s Solana mint address.
+
+- **Sell 50% of your holdings:**
+  ```bash
+  node warlord-cli.js trade <TOKEN_MINT> -s 50%
+  ```
+
+You can use any percent (e.g. `-s 100%` for all, or `-s 25%` for a quarter sell).
+
+### 6. Notifications
+
+On first run, macOS will prompt you for notification permissions — grant them to receive real-time trade and setup alerts directly from the VAULT77 Warlord.
+
+Every successful (or failed) trade triggers a native notification, so you always know the fate of your orders.
+
+### 7. Support & Community
+
+Should you encounter any anomalies, lost relics, or require guidance from seasoned operators:
+
+- **VAULT77 Community:** [Join on X](https://x.com/i/communities/1962257350309650488)
+- **Telegram:** [@BurnWalletBroadcast](https://t.me/BurnWalletBroadcast)
+
+> The Warlord’s trenches run deep. Don’t hesitate to reach out — the community is here to help you survive and thrive.
