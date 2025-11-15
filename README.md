@@ -5,7 +5,7 @@
 
 # summonTheWarlord — a VAULT77 🔐77 relic
 
-**Version:** 1.5.1
+**Version:** 1.5.4
 
 > *Relic software unearthed from VAULT77.  
 > For trench operators only. macOS-native. Handle with care.*  
