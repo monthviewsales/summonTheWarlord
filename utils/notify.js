@@ -34,7 +34,10 @@ export function notify({ title = "summonTheWarlord", message = "", subtitle = ""
       script += ` sound name "${escapeAppleScriptString(sound)}"`;
     }
 
-    spawnSync("osascript", ["-e", script], { stdio: "ignore" });
+    const result = spawnSync("osascript", ["-e", script], { stdio: "ignore" });
+    if (result.error || result.status !== 0) {
+      throw result.error || new Error(`osascript exited with ${result.status}`);
+    }
   } catch (err) {
     console.log(`🔔 ${title}: ${message}${subtitle ? ` - ${subtitle}` : ""}`);
   }
