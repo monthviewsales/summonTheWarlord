@@ -6,22 +6,22 @@ import fs from "fs-extra";
 
 import { getConfigPath, loadConfig, saveConfig } from "../lib/config.js";
 
-let originalXdgConfigHome;
+let originalConfigHome;
 let tempConfigHome;
 
 beforeEach(async () => {
-  originalXdgConfigHome = process.env.XDG_CONFIG_HOME;
+  originalConfigHome = process.env.SUMMON_WARLORD_CONFIG_HOME;
   tempConfigHome = await fs.mkdtemp(path.join(os.tmpdir(), "warlord-config-"));
-  process.env.XDG_CONFIG_HOME = tempConfigHome;
+  process.env.SUMMON_WARLORD_CONFIG_HOME = tempConfigHome;
 });
 
 afterEach(async () => {
-  if (originalXdgConfigHome === undefined) {
-    delete process.env.XDG_CONFIG_HOME;
+  if (originalConfigHome === undefined) {
+    delete process.env.SUMMON_WARLORD_CONFIG_HOME;
   } else {
-    process.env.XDG_CONFIG_HOME = originalXdgConfigHome;
+    process.env.SUMMON_WARLORD_CONFIG_HOME = originalConfigHome;
   }
-  originalXdgConfigHome = undefined;
+  originalConfigHome = undefined;
 
   if (tempConfigHome) {
     await fs.remove(tempConfigHome);
@@ -29,7 +29,7 @@ afterEach(async () => {
   }
 });
 
-test("getConfigPath respects XDG_CONFIG_HOME", () => {
+test("getConfigPath respects SUMMON_WARLORD_CONFIG_HOME", () => {
   const expected = path.join(tempConfigHome, "summonTheWarlord", "config.json");
   assert.equal(getConfigPath(), expected);
 });
@@ -64,6 +64,21 @@ test("loadConfig merges missing defaults", async () => {
   assert.equal(cfg.slippage, 5);
   assert.equal(cfg.priorityFeeLevel, "low", "missing default should be merged");
   assert.equal(cfg.txVersion, "v0", "txVersion default should be added");
+});
+
+test("loadConfig recovers from invalid JSON", async () => {
+  const configPath = getConfigPath();
+  await fs.ensureDir(path.dirname(configPath));
+  await fs.writeFile(configPath, "{ invalid json");
+
+  const cfg = await loadConfig();
+
+  const stored = await fs.readJson(configPath);
+  assert.deepEqual(cfg, stored, "config should be restored to defaults");
+
+  const dirEntries = await fs.readdir(path.dirname(configPath));
+  const backups = dirEntries.filter((name) => name.startsWith("config.json.invalid-"));
+  assert.ok(backups.length >= 1, "invalid config backup should be created");
 });
 
 test("saveConfig persists updates with secure permissions", async () => {

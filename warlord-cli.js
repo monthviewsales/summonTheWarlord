@@ -5,6 +5,20 @@ import { storePrivateKey, getPrivateKey, deletePrivateKey, hasPrivateKey } from 
 import readline from "readline";
 import { notify } from "./utils/notify.js";
 
+const parseConfigValue = (raw) => {
+  const trimmed = String(raw ?? "").trim();
+  if (/^(true|false)$/i.test(trimmed)) {
+    return trimmed.toLowerCase() === "true";
+  }
+  if (trimmed !== "") {
+    const num = Number(trimmed);
+    if (!Number.isNaN(num)) {
+      return num;
+    }
+  }
+  return raw;
+};
+
 const program = new Command();
 program
   .name("warlord")
@@ -45,7 +59,36 @@ configCmd
   .action(async (key, value) => {
     const configPath = getConfigPath();
     const cfg = await loadConfig();
-    cfg[key] = isNaN(Number(value)) ? value : Number(value);
+    const parsedValue = parseConfigValue(value);
+    if (key === "slippage") {
+      if (typeof parsedValue === "boolean") {
+        console.error("⚠️  Invalid slippage. Use a non-negative number.");
+        process.exit(1);
+      }
+      const slippage = Number(parsedValue);
+      if (!Number.isFinite(slippage) || slippage < 0) {
+        console.error("⚠️  Invalid slippage. Use a non-negative number.");
+        process.exit(1);
+      }
+      cfg[key] = slippage;
+    } else if (key === "priorityFee") {
+      if (typeof parsedValue === "string" && parsedValue.toLowerCase() === "auto") {
+        cfg[key] = "auto";
+      } else {
+        if (typeof parsedValue === "boolean") {
+          console.error("⚠️  Invalid priorityFee. Use a non-negative number or \"auto\".");
+          process.exit(1);
+        }
+        const fee = Number(parsedValue);
+        if (!Number.isFinite(fee) || fee < 0) {
+          console.error("⚠️  Invalid priorityFee. Use a non-negative number or \"auto\".");
+          process.exit(1);
+        }
+        cfg[key] = fee;
+      }
+    } else {
+      cfg[key] = parsedValue;
+    }
     await saveConfig(cfg);
     console.log(`✅  Updated ${key} → ${value} in ${configPath}`);
   });
@@ -69,7 +112,14 @@ program
 
     // Slippage
     const slippage = await ask(`Enter max slippage % [${cfg.slippage}]: `);
-    if (slippage) cfg.slippage = parseFloat(slippage);
+    if (slippage) {
+      const slippageNum = Number(slippage);
+      if (!Number.isFinite(slippageNum) || slippageNum < 0) {
+        console.warn("⚠️  Invalid slippage. Keeping existing value.");
+      } else {
+        cfg.slippage = slippageNum;
+      }
+    }
 
     // API Key
     const swapAPIKey = await ask(`Enter Swap API Key [${cfg.swapAPIKey}]: `);
@@ -149,8 +199,13 @@ keychainCmd
     });
     rl.question("Paste your wallet private key: ", async (input) => {
       rl.close();
-      await storePrivateKey(input.trim());
-      console.log("🔐 Private key securely stored in macOS Keychain.");
+      try {
+        await storePrivateKey(input.trim());
+        console.log("🔐 Private key securely stored in macOS Keychain.");
+      } catch (err) {
+        console.error("❌ Failed to store key:", err.message);
+        process.exitCode = 1;
+      }
     });
   });
 
