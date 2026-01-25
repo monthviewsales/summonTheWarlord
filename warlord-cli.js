@@ -1,23 +1,17 @@
 #!/usr/bin/env node
 import { Command } from "commander";
-import { getConfigPath, loadConfig, saveConfig, editConfig } from "./lib/config.js";
+import {
+  getConfigPath,
+  loadConfig,
+  saveConfig,
+  editConfig,
+  parseConfigValue,
+  normalizeConfigValue,
+} from "./lib/config.js";
 import { storePrivateKey, getPrivateKey, deletePrivateKey, hasPrivateKey } from "./utils/keychain.js";
 import readline from "readline";
 import { notify } from "./utils/notify.js";
-
-const parseConfigValue = (raw) => {
-  const trimmed = String(raw ?? "").trim();
-  if (/^(true|false)$/i.test(trimmed)) {
-    return trimmed.toLowerCase() === "true";
-  }
-  if (trimmed !== "") {
-    const num = Number(trimmed);
-    if (!Number.isNaN(num)) {
-      return num;
-    }
-  }
-  return raw;
-};
+import { runDoctor } from "./lib/doctor.js";
 
 const program = new Command();
 program
@@ -60,34 +54,11 @@ configCmd
     const configPath = getConfigPath();
     const cfg = await loadConfig();
     const parsedValue = parseConfigValue(value);
-    if (key === "slippage") {
-      if (typeof parsedValue === "boolean") {
-        console.error("⚠️  Invalid slippage. Use a non-negative number.");
-        process.exit(1);
-      }
-      const slippage = Number(parsedValue);
-      if (!Number.isFinite(slippage) || slippage < 0) {
-        console.error("⚠️  Invalid slippage. Use a non-negative number.");
-        process.exit(1);
-      }
-      cfg[key] = slippage;
-    } else if (key === "priorityFee") {
-      if (typeof parsedValue === "string" && parsedValue.toLowerCase() === "auto") {
-        cfg[key] = "auto";
-      } else {
-        if (typeof parsedValue === "boolean") {
-          console.error("⚠️  Invalid priorityFee. Use a non-negative number or \"auto\".");
-          process.exit(1);
-        }
-        const fee = Number(parsedValue);
-        if (!Number.isFinite(fee) || fee < 0) {
-          console.error("⚠️  Invalid priorityFee. Use a non-negative number or \"auto\".");
-          process.exit(1);
-        }
-        cfg[key] = fee;
-      }
-    } else {
-      cfg[key] = parsedValue;
+    try {
+      cfg[key] = normalizeConfigValue(key, parsedValue, { strict: true });
+    } catch (err) {
+      console.error(`⚠️  ${err.message}`);
+      process.exit(1);
     }
     await saveConfig(cfg);
     console.log(`✅  Updated ${key} → ${value} in ${configPath}`);
@@ -113,11 +84,10 @@ program
     // Slippage
     const slippage = await ask(`Enter max slippage % [${cfg.slippage}]: `);
     if (slippage) {
-      const slippageNum = Number(slippage);
-      if (!Number.isFinite(slippageNum) || slippageNum < 0) {
-        console.warn("⚠️  Invalid slippage. Keeping existing value.");
-      } else {
-        cfg.slippage = slippageNum;
+      try {
+        cfg.slippage = normalizeConfigValue("slippage", parseConfigValue(slippage), { strict: true });
+      } catch (err) {
+        console.warn(`⚠️  ${err.message} Keeping existing value.`);
       }
     }
 
@@ -354,6 +324,24 @@ program
     }
   });
 
+// DOCTOR command
+program
+  .command("doctor")
+  .description("Run environment and connectivity checks")
+  .option("-v, --verbose", "Show verbose output")
+  .action(async (options) => {
+    const results = await runDoctor({ verbose: Boolean(options.verbose) });
+    for (const result of results) {
+      const icon = result.status === "ok" ? "✅" : result.status === "skip" ? "⚠️" : "❌";
+      console.log(`${icon} ${result.name}: ${result.message}`);
+      if (options.verbose && result.details) {
+        console.log(`   • ${result.details}`);
+      }
+    }
+    const hasFailure = results.some((item) => item.status === "fail");
+    process.exit(hasFailure ? 1 : 0);
+  });
+
 // MANUAL command
 program
   .command("man")
@@ -395,6 +383,9 @@ USAGE:
 
   warlord wallet
       Open your wallet on SolanaTracker.io
+
+  warlord doctor
+      Run diagnostics for config, Keychain, RPC, swap API, and notifications
 
   warlord man
       Display this manual
