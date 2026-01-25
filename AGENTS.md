@@ -7,7 +7,7 @@
 
 ## Repository Expectations (Codex)
 - Keep changes small and targeted unless a refactor is explicitly requested.
-- Run `npm test` after changes in `lib/`, `utils/`, `warlord-cli.js`, or `test/`.
+- Run `npm test` and `npm run lint` after changes in `lib/`, `utils/`, `warlord-cli.js`, or `test/`.
 - Never log or persist private keys or API keys; use the Keychain flows.
 - Prefer `rg` for search and `apply_patch` for focused edits.
 - If a change affects on-chain trades, call out manual verification steps.

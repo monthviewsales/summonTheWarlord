@@ -152,3 +152,22 @@ warlord keychain store
 warlord keychain unlock
 warlord keychain delete
 ```
+
+---
+
+# 🧪 Testing & Linting
+
+```bash
+npm test
+npm run lint
+```
+
+---
+
+# 🩺 Diagnostics
+
+```bash
+warlord doctor
+```
+
+Runs checks for config, Keychain access, RPC reachability, swap API health, and macOS notifications.

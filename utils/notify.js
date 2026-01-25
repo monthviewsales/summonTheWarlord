@@ -1,9 +1,11 @@
 import { spawnSync } from "node:child_process";
+import { NotificationError } from "../lib/errors.js";
+import { logger } from "./logger.js";
 
 function escapeAppleScriptString(str) {
   return str
     .replace(/\\/g, "\\\\")
-    .replace(/"/g, '\\"')
+    .replace(/"/g, "\\\"")
     .replace(/\n/g, "\\n");
 }
 
@@ -15,11 +17,17 @@ function escapeAppleScriptString(str) {
  * @param {string} [options.subtitle=""]
  * @param {string} [options.sound]
  */
-export function notify({ title = "summonTheWarlord", message = "", subtitle = "", sound } = {}) {
+export function notify({
+  title = "summonTheWarlord",
+  message = "",
+  subtitle = "",
+  sound,
+  throwOnError = false,
+} = {}) {
   if (process.platform !== "darwin") {
     const bell = "\u0007";
     console.log(`${bell} ${title}: ${message}${subtitle ? ` - ${subtitle}` : ""}`);
-    return;
+    return false;
   }
 
   try {
@@ -36,9 +44,15 @@ export function notify({ title = "summonTheWarlord", message = "", subtitle = ""
 
     const result = spawnSync("osascript", ["-e", script], { stdio: "ignore" });
     if (result.error || result.status !== 0) {
-      throw result.error || new Error(`osascript exited with ${result.status}`);
+      throw new NotificationError(`osascript exited with ${result.status}`, { cause: result.error });
     }
+    return true;
   } catch (err) {
+    logger.warn("Notification failed.", { error: err?.message });
+    if (throwOnError) {
+      throw err;
+    }
     console.log(`🔔 ${title}: ${message}${subtitle ? ` - ${subtitle}` : ""}`);
+    return false;
   }
 }

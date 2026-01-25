@@ -1,8 +1,9 @@
+import keytar from "keytar";
+import { KeychainError } from "../lib/errors.js";
+import { logger } from "./logger.js";
 
-import keytar from 'keytar';
-
-const SERVICE = 'summonTheWarlord';
-const ACCOUNT = 'wallet-private-key';
+const SERVICE = "summonTheWarlord";
+const ACCOUNT = "wallet-private-key";
 
 /**
  * Normalize a pasted secret by coercing to string and trimming whitespace/newlines.
@@ -10,7 +11,7 @@ const ACCOUNT = 'wallet-private-key';
  * @returns {string}
  */
 function normalizeSecret(secret) {
-  return String(secret ?? '').trim();
+  return String(secret ?? "").trim();
 }
 
 /**
@@ -21,10 +22,15 @@ function normalizeSecret(secret) {
 export async function storePrivateKey(secret) {
   const normalized = normalizeSecret(secret);
   if (!normalized) {
-    throw new Error('No private key provided. Paste your Base58 string or JSON array.');
+    throw new KeychainError("No private key provided. Paste your Base58 string or JSON array.");
   }
-  await keytar.setPassword(SERVICE, ACCOUNT, normalized);
-  console.log('🔐 Private key securely stored in macOS Keychain.');
+  try {
+    await keytar.setPassword(SERVICE, ACCOUNT, normalized);
+    console.log("🔐 Private key securely stored in macOS Keychain.");
+  } catch (err) {
+    logger.error("Failed to store private key.", { error: err?.message });
+    throw new KeychainError("Failed to store private key in Keychain.", { cause: err });
+  }
 }
 
 /**
@@ -33,11 +39,17 @@ export async function storePrivateKey(secret) {
  * @returns {Promise<string>}
  */
 export async function getPrivateKey() {
-  const key = await keytar.getPassword(SERVICE, ACCOUNT);
-  if (!key) {
-    throw new Error('Private key not found. Run `warlord keychain store` to save it.');
+  try {
+    const key = await keytar.getPassword(SERVICE, ACCOUNT);
+    if (!key) {
+      throw new KeychainError("Private key not found. Run `warlord keychain store` to save it.");
+    }
+    return key.trim();
+  } catch (err) {
+    if (err instanceof KeychainError) throw err;
+    logger.error("Failed to read private key from Keychain.", { error: err?.message });
+    throw new KeychainError("Failed to read private key from Keychain.", { cause: err });
   }
-  return key.trim();
 }
 
 /**
@@ -45,8 +57,13 @@ export async function getPrivateKey() {
  * @returns {Promise<boolean>}
  */
 export async function hasPrivateKey() {
-  const key = await keytar.getPassword(SERVICE, ACCOUNT);
-  return typeof key === 'string' && key.length > 0;
+  try {
+    const key = await keytar.getPassword(SERVICE, ACCOUNT);
+    return typeof key === "string" && key.length > 0;
+  } catch (err) {
+    logger.error("Failed to check Keychain for private key.", { error: err?.message });
+    return false;
+  }
 }
 
 /**
@@ -54,11 +71,16 @@ export async function hasPrivateKey() {
  * @returns {Promise<boolean>} true if an entry was deleted, false if nothing existed
  */
 export async function deletePrivateKey() {
-  const deleted = await keytar.deletePassword(SERVICE, ACCOUNT);
-  if (deleted) {
-    console.log('💥 Private key removed from macOS Keychain.');
-  } else {
-    console.log('ℹ️ No private key found in macOS Keychain.');
+  try {
+    const deleted = await keytar.deletePassword(SERVICE, ACCOUNT);
+    if (deleted) {
+      console.log("💥 Private key removed from macOS Keychain.");
+    } else {
+      console.log("ℹ️ No private key found in macOS Keychain.");
+    }
+    return deleted;
+  } catch (err) {
+    logger.error("Failed to delete private key from Keychain.", { error: err?.message });
+    throw new KeychainError("Failed to delete private key from Keychain.", { cause: err });
   }
-  return deleted;
 }
