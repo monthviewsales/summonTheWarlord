@@ -45,6 +45,7 @@ test("loadConfig writes defaults when missing", async () => {
   expect(cfg.priorityFee).toBe("auto");
   expect(cfg.priorityFeeLevel).toBe("medium");
   expect(cfg.jito).toEqual({ enabled: false, tip: 0.0001 });
+  expect(cfg.notificationsEnabled).toBe(true);
 
   const fileStat = await fs.stat(configPath);
   expect(fileStat.mode & 0o777).toBe(0o600);
@@ -91,6 +92,7 @@ test("saveConfig persists updates with secure permissions", async () => {
     txVersion: "legacy",
     showQuoteDetails: true,
     DEBUG_MODE: true,
+    notificationsEnabled: false,
     jito: { enabled: true, tip: 0.0002 },
   };
 

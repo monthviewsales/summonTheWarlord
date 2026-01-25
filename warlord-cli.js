@@ -40,6 +40,7 @@ const CONFIG_HELP = [
   { key: "txVersion", type: TX_VERSIONS.join(" | "), note: "Transaction version" },
   { key: "showQuoteDetails", type: "true | false", note: "Print quote details after swaps" },
   { key: "DEBUG_MODE", type: "true | false", note: "Enable verbose SDK logs" },
+  { key: "notificationsEnabled", type: "true | false", note: "Enable macOS notifications" },
   { key: "jito.enabled", type: "true | false", note: "Enable Jito bundles" },
   { key: "jito.tip", type: "number", note: "Tip in SOL when Jito enabled" },
 ];
@@ -115,6 +116,7 @@ function renderConfigSummary(cfg, configPath, title = "CONFIG") {
     ["Tx version", cfg.txVersion],
     ["Show quote", cfg.showQuoteDetails],
     ["Debug mode", cfg.DEBUG_MODE],
+    ["Notifications", cfg.notificationsEnabled],
     ["Jito enabled", jitoEnabled],
     ["Jito tip (SOL)", jitoTip],
   ];
@@ -236,6 +238,13 @@ async function runConfigWizard({ cfg, rl }) {
     current: nextCfg.DEBUG_MODE ? "true" : "false",
   });
   nextCfg.DEBUG_MODE = debugMode === "true";
+
+  clearScreen();
+  renderWizardHeader();
+  const notificationsEnabled = await promptSelect(rl, "Enable notifications", ["true", "false"], {
+    current: nextCfg.notificationsEnabled ? "true" : "false",
+  });
+  nextCfg.notificationsEnabled = notificationsEnabled === "true";
 
   clearScreen();
   renderWizardHeader();
@@ -464,16 +473,20 @@ program
     console.log("🧠 Setup complete.");
 
     // Test macOS notifications so users can allow permissions now
-    try {
-      notify({
-        title: "summonTheWarlord",
-        subtitle: "Setup complete",
-        message: "If you see this, notifications are enabled.",
-        sound: "Ping",
-      });
-      console.log("🔔 Test notification sent. If you see it, notifications are enabled.");
-    } catch {
-      console.warn("⚠️ Unable to send test notification. You may need to enable notifications for your terminal.");
+    if (updated.notificationsEnabled !== false) {
+      try {
+        notify({
+          title: "summonTheWarlord",
+          subtitle: "Setup complete",
+          message: "If you see this, notifications are enabled.",
+          sound: "Ping",
+        });
+        console.log("🔔 Test notification sent. If you see it, notifications are enabled.");
+      } catch {
+        console.warn("⚠️ Unable to send test notification. You may need to enable notifications for your terminal.");
+      }
+    } else {
+      console.log("🔕 Notifications are disabled in config.");
     }
   });
 
