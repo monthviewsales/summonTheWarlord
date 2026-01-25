@@ -1,10 +1,10 @@
 # summonTheWarlord — a VAULT77 🔐77 relic
 
 ![Release](https://img.shields.io/github/v/release/monthviewsales/summonTheWarlord)
-![Node](https://img.shields.io/badge/node-%3E%3D20.x-brightgreen)
+![Node](https://img.shields.io/badge/node-%3E%3D18.x-brightgreen)
 ![Platform](https://img.shields.io/badge/platform-macOS-blue)
 
-**Version:** 1.5.5
+**Version:** 1.5.7
 
 > *Relic software unearthed from VAULT77.  
 > For trench operators only. macOS‑native. Handle with care.*  
@@ -13,6 +13,7 @@
 ---
 
 ## Requirements
+- Node.js >= 18  
 - A [SolanaTracker.io](https://www.solanatracker.io/?ref=0NGJ5PPN) account  
 - macOS (Keychain + notifications required — other OSes are not supported)
 
@@ -40,25 +41,16 @@ cd summonTheWarlord
 npm install
 ```
 
-### 3. Environment Setup
-
-Create a `.env` file and add:
-
-```env
-SOLANATRACKER_API_KEY=your_api_key
-SOLANATRACKER_RPC=https://your-rpc-url.solanatracker.io
-```
-
-### 4. First Run — Initialize Wallet + Permissions
+### 3. First Run — Initialize Wallet + Permissions
 
 ```bash
 node warlord-cli.js setup
 ```
 
 This:
-- Creates/imports your wallet  
-- Stores it securely in macOS Keychain  
-- Enables macOS notifications  
+- Creates/updates your config (RPC URL, API key, slippage, etc.)  
+- Stores your private key securely in macOS Keychain  
+- Prompts macOS notification permissions  
 
 ---
 
@@ -122,3 +114,41 @@ See **AGENTS.md** for building conventions, coding rules, and automation guidanc
 
 - **VAULT77 Community:** https://x.com/i/communities/1962257350309650488  
 - **Telegram:** https://t.me/BurnWalletBroadcast  
+
+---
+
+# ⚙️ Configuration
+
+The CLI stores configuration in:
+
+- `~/Library/Application Support/summonTheWarlord/config.json`
+
+You can manage it with:
+
+```bash
+warlord config view
+warlord config edit
+warlord config set <key> <value>
+```
+
+Key options:
+- `rpcUrl` (the CLI will append `advancedTx=true` if missing)
+- `swapAPIKey`
+- `slippage` (number, %)
+- `priorityFee` (number or `"auto"`)
+- `priorityFeeLevel` (`min|low|medium|high|veryHigh|unsafeMax`)
+- `txVersion` (`v0` or `legacy`)
+- `showQuoteDetails` (`true`/`false`)
+- `DEBUG_MODE` (`true`/`false`)
+
+Override config location (useful for CI or tests):
+- `SUMMON_WARLORD_CONFIG_HOME=/custom/config/dir`
+- `SUMMON_WARLORD_CONFIG_PATH=/custom/path/config.json`
+
+Private keys are never stored in this file. Use:
+
+```bash
+warlord keychain store
+warlord keychain unlock
+warlord keychain delete
+```
