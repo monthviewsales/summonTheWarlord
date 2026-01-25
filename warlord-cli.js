@@ -5,8 +5,12 @@ import {
   loadConfig,
   saveConfig,
   editConfig,
+  CONFIG_KEYS,
+  DEFAULT_CONFIG,
   parseConfigValue,
   normalizeConfigValue,
+  PRIORITY_FEE_LEVELS,
+  TX_VERSIONS,
 } from "./lib/config.js";
 import { storePrivateKey, getPrivateKey, deletePrivateKey, hasPrivateKey } from "./utils/keychain.js";
 import readline from "readline";
@@ -19,6 +23,312 @@ program
   .description("Summon the Warlord Solana CLI")
   .showHelpAfterError(); // show help after invalid flags/args
 
+const CONFIG_KEY_SET = new Set([
+  ...CONFIG_KEYS.filter((key) => key !== "jito"),
+  "jito.enabled",
+  "jito.tip",
+]);
+const CONFIG_HELP = [
+  { key: "rpcUrl", type: "string", note: "RPC URL (advancedTx=true is enforced)" },
+  { key: "slippage", type: "number | auto", note: "Max slippage percentage" },
+  { key: "priorityFee", type: "number | auto", note: "Priority fee in SOL" },
+  {
+    key: "priorityFeeLevel",
+    type: PRIORITY_FEE_LEVELS.join(" | "),
+    note: "Required when priorityFee=auto",
+  },
+  { key: "txVersion", type: TX_VERSIONS.join(" | "), note: "Transaction version" },
+  { key: "showQuoteDetails", type: "true | false", note: "Print quote details after swaps" },
+  { key: "DEBUG_MODE", type: "true | false", note: "Enable verbose SDK logs" },
+  { key: "jito.enabled", type: "true | false", note: "Enable Jito bundles" },
+  { key: "jito.tip", type: "number", note: "Tip in SOL when Jito enabled" },
+];
+
+const askQuestion = (rl, prompt) =>
+  new Promise((resolve) => rl.question(prompt, (answer) => resolve(answer.trim())));
+
+const COLOR_ENABLED = process.stdout.isTTY;
+const ANSI = {
+  reset: "\x1b[0m",
+  blue: "\x1b[34m",
+  purple: "\x1b[35m",
+  green: "\x1b[32m",
+};
+
+const paint = (text, color) => (COLOR_ENABLED ? `${color}${text}${ANSI.reset}` : text);
+
+function clearScreen() {
+  if (process.stdout.isTTY) {
+    process.stdout.write("\x1Bc");
+  } else {
+    console.clear();
+  }
+}
+
+function renderWizardHeader() {
+  console.log("⚙️  Config Wizard");
+  console.log("Press Enter to keep the current value.\n");
+}
+
+function toDisplayValue(value) {
+  if (value === undefined || value === null) return "";
+  if (typeof value === "object") return JSON.stringify(value);
+  return String(value);
+}
+
+function formatBox({ title, rows }) {
+  const normalizedRows = rows.map(([label, value]) => [String(label), String(value)]);
+  const labelWidth = Math.max(...normalizedRows.map(([label]) => label.length), 0);
+  const valueWidth = Math.max(...normalizedRows.map(([, value]) => value.length), 0);
+  const titleText = title ? ` ${title} ` : "";
+  const innerWidth = Math.max(labelWidth + 3 + valueWidth, titleText.length);
+  const totalWidth = innerWidth + 2;
+
+  let topBorder = `┌${"─".repeat(totalWidth)}┐`;
+  if (titleText) {
+    const left = Math.floor((totalWidth - titleText.length) / 2);
+    const right = totalWidth - titleText.length - left;
+    topBorder = `┌${"─".repeat(left)}${paint(titleText, ANSI.purple)}${"─".repeat(right)}┐`;
+  }
+
+  const lines = normalizedRows.map(([label, value]) => {
+    const labelText = label.padEnd(labelWidth);
+    const content = `${paint(labelText, ANSI.blue)} : ${paint(value, ANSI.green)}`;
+    const contentLength = labelText.length + 3 + value.length;
+    const padding = " ".repeat(Math.max(0, innerWidth - contentLength));
+    return `│ ${content}${padding} │`;
+  });
+
+  const bottomBorder = `└${"─".repeat(totalWidth)}┘`;
+  return [topBorder, ...lines, bottomBorder].join("\n");
+}
+
+function renderConfigSummary(cfg, configPath, title = "CONFIG") {
+  const jitoEnabled = cfg.jito?.enabled ? "true" : "false";
+  const jitoTip = cfg.jito?.enabled ? cfg.jito.tip : "-";
+  const rows = [
+    ["Config path", configPath],
+    ["RPC URL", cfg.rpcUrl],
+    ["Slippage", cfg.slippage],
+    ["Priority fee", cfg.priorityFee],
+    ["Priority level", cfg.priorityFeeLevel],
+    ["Tx version", cfg.txVersion],
+    ["Show quote", cfg.showQuoteDetails],
+    ["Debug mode", cfg.DEBUG_MODE],
+    ["Jito enabled", jitoEnabled],
+    ["Jito tip (SOL)", jitoTip],
+  ];
+  console.log(formatBox({ title, rows }));
+}
+
+async function promptSelect(rl, label, options, { current, required = false } = {}) {
+  const menu = options.map((opt, index) => `  ${index + 1}) ${opt}`).join("\n");
+  while (true) {
+    console.log(`\n${label}`);
+    console.log(menu);
+    const suffix = current ? ` [${current}]` : "";
+    const answer = await askQuestion(rl, `Select${suffix}: `);
+    if (!answer) {
+      if (required) {
+        console.log("⚠️  Selection required.");
+        continue;
+      }
+      return current;
+    }
+    const normalized = answer.trim();
+    const index = Number(normalized);
+    if (Number.isInteger(index) && index >= 1 && index <= options.length) {
+      return options[index - 1];
+    }
+    const match = options.find((opt) => opt.toLowerCase() === normalized.toLowerCase());
+    if (match) return match;
+    console.log("⚠️  Invalid selection. Choose a number or value from the list.");
+  }
+}
+
+async function promptNormalized(rl, label, key, { current, required = false } = {}) {
+  while (true) {
+    const suffix = current !== undefined ? ` [${toDisplayValue(current)}]` : "";
+    const answer = await askQuestion(rl, `${label}${suffix}: `);
+    if (!answer) {
+      if (required) {
+        console.log("⚠️  Value required.");
+        continue;
+      }
+      return current;
+    }
+    try {
+      return normalizeConfigValue(key, parseConfigValue(answer), { strict: true });
+    } catch (err) {
+      console.log(`⚠️  ${err.message}`);
+    }
+  }
+}
+
+async function promptNumber(rl, label, { current, required = false } = {}) {
+  while (true) {
+    const suffix = current !== undefined ? ` [${toDisplayValue(current)}]` : "";
+    const answer = await askQuestion(rl, `${label}${suffix}: `);
+    if (!answer) {
+      if (required) {
+        console.log("⚠️  Value required.");
+        continue;
+      }
+      return current;
+    }
+    const num = Number(answer);
+    if (Number.isFinite(num) && num >= 0) {
+      return num;
+    }
+    console.log("⚠️  Invalid number. Use a non-negative value.");
+  }
+}
+
+async function runConfigWizard({ cfg, rl }) {
+  const nextCfg = { ...cfg, jito: { ...DEFAULT_CONFIG.jito, ...(cfg.jito || {}) } };
+
+  clearScreen();
+  renderWizardHeader();
+  console.log("RPC URL should be the SolanaTracker endpoint assigned to you.");
+  console.log("advancedTx=true is enforced automatically.\n");
+  nextCfg.rpcUrl = await promptNormalized(rl, "RPC URL", "rpcUrl", { current: nextCfg.rpcUrl });
+
+  clearScreen();
+  renderWizardHeader();
+  nextCfg.slippage = await promptNormalized(rl, "Max slippage (number or \"auto\")", "slippage", {
+    current: nextCfg.slippage,
+  });
+
+  clearScreen();
+  renderWizardHeader();
+  nextCfg.priorityFee = await promptNormalized(rl, "Priority fee (number or \"auto\")", "priorityFee", {
+    current: nextCfg.priorityFee,
+  });
+
+  clearScreen();
+  renderWizardHeader();
+  nextCfg.priorityFeeLevel = await promptSelect(
+    rl,
+    "Priority fee level (used when priorityFee is auto)",
+    PRIORITY_FEE_LEVELS,
+    {
+      current: nextCfg.priorityFeeLevel,
+      required: true,
+    }
+  );
+
+  clearScreen();
+  renderWizardHeader();
+  nextCfg.txVersion = await promptSelect(rl, "Transaction version", TX_VERSIONS, {
+    current: nextCfg.txVersion,
+  });
+
+  clearScreen();
+  renderWizardHeader();
+  const showQuoteDetails = await promptSelect(rl, "Show quote details", ["true", "false"], {
+    current: nextCfg.showQuoteDetails ? "true" : "false",
+  });
+  nextCfg.showQuoteDetails = showQuoteDetails === "true";
+
+  clearScreen();
+  renderWizardHeader();
+  const debugMode = await promptSelect(rl, "Enable debug mode", ["true", "false"], {
+    current: nextCfg.DEBUG_MODE ? "true" : "false",
+  });
+  nextCfg.DEBUG_MODE = debugMode === "true";
+
+  clearScreen();
+  renderWizardHeader();
+  const jitoEnabled = await promptSelect(rl, "Enable Jito bundles", ["true", "false"], {
+    current: nextCfg.jito.enabled ? "true" : "false",
+  });
+  nextCfg.jito.enabled = jitoEnabled === "true";
+  if (nextCfg.jito.enabled) {
+    clearScreen();
+    renderWizardHeader();
+    const requireTip = nextCfg.jito.tip === undefined || nextCfg.jito.tip === null;
+    nextCfg.jito.tip = await promptNumber(rl, "Jito tip (SOL)", {
+      current: nextCfg.jito.tip,
+      required: requireTip,
+    });
+  }
+
+  return nextCfg;
+}
+
+let tradeModulePromise;
+const getTradeModule = async () => {
+  if (!tradeModulePromise) {
+    tradeModulePromise = import("./lib/trades.js");
+  }
+  return tradeModulePromise;
+};
+
+async function executeTrade(type, mint, amountArg) {
+  const cfg = await loadConfig();
+
+  if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(mint)) {
+    console.error("⚠️  Invalid mint format. Expected base58 address (32–44 chars).");
+    process.exit(1);
+  }
+
+  let amountParam = amountArg.toString().trim().toLowerCase().replace(/\s+/g, "");
+
+  if (amountParam !== "auto" && !amountParam.endsWith("%")) {
+    const num = parseFloat(amountParam);
+    if (isNaN(num) || num <= 0) {
+      console.error("⚠️  Invalid amount. Use a positive number, 'auto' during a sell, or '<percent>%'.");
+      process.exit(1);
+    }
+    amountParam = num;
+  }
+
+  try {
+    if (type === "buy") {
+      if (amountParam === "auto") {
+        console.error("⚠️  Buying with 'auto' isn’t supported. Use a number or '<percent>%'.");
+        process.exit(1);
+      }
+
+      console.log(`🚀 Warlord: Buying ${amountParam} of ${mint}...`);
+      const { buyToken } = await getTradeModule();
+      const result = await buyToken(mint, amountParam);
+      console.log("✅ Buy successful!");
+      const buyRows = [
+        ["TXID", result.txid],
+        ["Explorer", `https://orbmarkets.io/tx/${result.txid}`],
+        ["Tokens purchased", result.tokensReceivedDecimal],
+        ["Price impact", result.priceImpact],
+        ["Fees", result.totalFees],
+      ];
+      console.log(formatBox({ title: "BUY SUMMARY", rows: buyRows }));
+      if (cfg.showQuoteDetails) {
+        console.log(`   • Quote Details     : ${JSON.stringify(result.quote, null, 2)}`);
+      }
+    } else if (type === "sell") {
+      console.log(`⚔️  Warlord: Selling ${amountParam} of ${mint}...`);
+      const { sellToken } = await getTradeModule();
+      const result = await sellToken(mint, amountParam);
+      console.log("✅ Sell successful!");
+      const sellRows = [
+        ["TXID", result.txid],
+        ["Explorer", `https://orbmarkets.io/tx/${result.txid}`],
+        ["SOL received", result.solReceivedDecimal],
+        ["Price impact", result.priceImpact],
+        ["Fees", result.totalFees],
+      ];
+      console.log(formatBox({ title: "SELL SUMMARY", rows: sellRows }));
+      if (cfg.showQuoteDetails) {
+        console.log(`   • Quote Details      : ${JSON.stringify(result.quote, null, 2)}`);
+      }
+    }
+    process.exit(0);
+  } catch (err) {
+    console.error(`❌ ${type === "buy" ? "Buy" : "Sell"} failed: ${err.message}`);
+    process.exit(1);
+  }
+}
+
 // CONFIG subcommands
 const configCmd = program.command("config").description("Manage CLI configuration");
 
@@ -28,16 +338,8 @@ configCmd
   .action(async () => {
     const configPath = getConfigPath();
     const cfg = await loadConfig();
-
-    // redact API key to avoid screen-share leaks
-    const redacted = { ...cfg };
-    if (redacted.swapAPIKey && typeof redacted.swapAPIKey === "string") {
-      const tail = redacted.swapAPIKey.slice(-4);
-      redacted.swapAPIKey = `************${tail}`;
-    }
-
     console.log(`Config file: ${configPath}\n`);
-    console.log(JSON.stringify(redacted, null, 2));
+    renderConfigSummary(cfg, configPath);
   });
 
 configCmd
@@ -54,14 +356,59 @@ configCmd
     const configPath = getConfigPath();
     const cfg = await loadConfig();
     const parsedValue = parseConfigValue(value);
+    if (!CONFIG_KEY_SET.has(key)) {
+      console.error(`⚠️  Unknown config key: ${key}`);
+      console.error("Run `warlord config list` to see valid keys.");
+      process.exit(1);
+    }
     try {
-      cfg[key] = normalizeConfigValue(key, parsedValue, { strict: true });
+      if (key.startsWith("jito.")) {
+        const field = key.split(".")[1];
+        const nextJito = { ...(cfg.jito || DEFAULT_CONFIG.jito), [field]: parsedValue };
+        cfg.jito = normalizeConfigValue("jito", nextJito, { strict: true });
+      } else {
+        const normalizedValue = normalizeConfigValue(key, parsedValue, { strict: true });
+        cfg[key] = normalizedValue;
+        if (key === "priorityFee" && normalizedValue === "auto") {
+          console.log(
+            `ℹ️  priorityFeeLevel is required when priorityFee is auto. Current level: ${cfg.priorityFeeLevel}`
+          );
+        }
+      }
     } catch (err) {
       console.error(`⚠️  ${err.message}`);
       process.exit(1);
     }
     await saveConfig(cfg);
     console.log(`✅  Updated ${key} → ${value} in ${configPath}`);
+    renderConfigSummary(cfg, configPath);
+  });
+
+configCmd
+  .command("list")
+  .description("List available config keys and types")
+  .action(() => {
+    console.log("Available config keys:");
+    for (const entry of CONFIG_HELP) {
+      console.log(`  • ${entry.key} (${entry.type}) — ${entry.note}`);
+    }
+  });
+
+configCmd
+  .command("wizard")
+  .description("Interactive config editor with type validation")
+  .action(async () => {
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+    const cfg = await loadConfig();
+    const updated = await runConfigWizard({ cfg, rl });
+    await saveConfig(updated);
+    rl.close();
+    const configPath = getConfigPath();
+    console.log("✅ Config updated.");
+    renderConfigSummary(updated, configPath);
   });
 
 // SETUP command – interactive setup wizard
@@ -74,61 +421,35 @@ program
       output: process.stdout,
     });
 
-    const ask = (q) => new Promise((resolve) => rl.question(q, (answer) => resolve(answer.trim())));
-
     const configPath = getConfigPath();
     const cfg = await loadConfig();
 
     console.log("⚙️  Warlord CLI Setup\n");
-
-    // Slippage
-    const slippage = await ask(`Enter max slippage % [${cfg.slippage}]: `);
-    if (slippage) {
-      try {
-        cfg.slippage = normalizeConfigValue("slippage", parseConfigValue(slippage), { strict: true });
-      } catch (err) {
-        console.warn(`⚠️  ${err.message} Keeping existing value.`);
-      }
-    }
-
-    // API Key
-    const swapAPIKey = await ask(`Enter Swap API Key [${cfg.swapAPIKey}]: `);
-    if (swapAPIKey) cfg.swapAPIKey = swapAPIKey;
-
-    // RPC URL
-    const rpcUrl = await ask(`Enter RPC URL from SolanaTracker.io [${cfg.rpcUrl}]: `);
-    if (rpcUrl) cfg.rpcUrl = rpcUrl;
-
-    // Public Wallet Address
-    const publicWallet = await ask(`Enter your public wallet address [${cfg.publicWallet || ""}]: `);
-    if (publicWallet) {
-      cfg.publicWallet = publicWallet;
-    } else if (!cfg.publicWallet) {
-      console.log("⚠️  No public wallet address set. You can set it later via 'config set publicWallet <address>'.");
-    }
-
-    // Quote Details
-    const quoteDetail = await ask(`Show trade details in output? (y/N): `);
-    cfg.showQuoteDetails = quoteDetail.toLowerCase() === "y";
-
-    await saveConfig(cfg);
+    const updated = await runConfigWizard({ cfg, rl });
+    await saveConfig(updated);
     console.log(`✅ Config saved to ${configPath}`);
 
     // Private key
     try {
       if (await hasPrivateKey()) {
-        const updateKey = await ask("🔓 Private key already stored in Keychain. Would you like to replace it? (y/N): ");
+        const updateKey = await askQuestion(
+          rl,
+          "🔓 Private key already stored in Keychain. Would you like to replace it? (y/N): "
+        );
         if (updateKey.toLowerCase() === "y") {
-          const privKey = await ask("Paste your new private key: ");
+          const privKey = await askQuestion(rl, "Paste your new private key: ");
           await storePrivateKey(privKey);
           console.log("🔐 Private key updated.");
         } else {
           console.log("✅ Keeping existing private key.");
         }
       } else {
-        const storeKey = await ask("Would you like to store your private key in the macOS Keychain now? (y/N): ");
+        const storeKey = await askQuestion(
+          rl,
+          "Would you like to store your private key in the macOS Keychain now? (y/N): "
+        );
         if (storeKey.toLowerCase() === "y") {
-          const privKey = await ask("Paste your private key: ");
+          const privKey = await askQuestion(rl, "Paste your private key: ");
           await storePrivateKey(privKey);
           console.log("🔐 Private key stored securely.");
         } else {
@@ -199,86 +520,32 @@ keychainCmd
     console.log("💥 Private key deleted from macOS Keychain.");
   });
 
-// Trade command with options for buy and sell
 program
-  .command("trade <mint>")
-  .description("Trade a specific token")
+  .command("buy <mint> <amount>")
+  .description("Buy a token with SOL")
+  .action(async (mint, amount) => {
+    await executeTrade("buy", mint, amount);
+  });
+
+program
+  .command("sell <mint> <amount>")
+  .description("Sell a token for SOL")
+  .action(async (mint, amount) => {
+    await executeTrade("sell", mint, amount);
+  });
+
+// Trade command with options for buy and sell (deprecated)
+program
+  .command("trade <mint>", { hidden: true })
+  .description("DEPRECATED: Trade a specific token")
   .option("-b, --buy <amount>", "Spend <amount> SOL (number or '<percent>%') to buy token")
   .option("-s, --sell <amount>", "Sell <amount> tokens (number, 'auto', or '<percent>%')")
   .action(async (mint, options) => {
-    const cfg = await loadConfig();
-
-    // basic mint sanity check (cheap guard before calling SDK)
-    if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(mint)) {
-      console.error("⚠️  Invalid mint format. Expected base58 address (32–44 chars).");
-      process.exit(1);
-    }
-
-    // Lazy-load heavy trade functions only when needed
-    let _tradeModule;
-    const getTradeModule = async () => {
-      if (!_tradeModule) {
-        _tradeModule = await import("./lib/trades.js");
-      }
-      return _tradeModule;
-    };
-
-    const executeTrade = async (type, amountArg) => {
-      // normalize: trim spaces and collapse whitespace (accepts "50 %")
-      let amountParam = amountArg.toString().trim().toLowerCase().replace(/\s+/g, "");
-
-      if (amountParam !== "auto" && !amountParam.endsWith("%")) {
-        const num = parseFloat(amountParam);
-        if (isNaN(num) || num <= 0) {
-          console.error("⚠️  Invalid amount. Use a positive number, 'auto' during a sell, or '<percent>%'.");
-          process.exit(1);
-        }
-        amountParam = num;
-      }
-
-      try {
-        if (type === "buy") {
-          // block 'auto' on buys to match SDK behavior
-          if (amountParam === "auto") {
-            console.error("⚠️  Buying with 'auto' isn’t supported. Use a number or '<percent>%'.");
-            process.exit(1);
-          }
-
-          console.log(`🚀 Warlord: Buying ${amountParam} of ${mint}...`);
-          const { buyToken } = await getTradeModule();
-          const result = await buyToken(mint, amountParam);
-          console.log("✅ Buy successful!");
-          console.log(`   • TXID              : ${result.txid}`);
-          console.log(`   • Tokens Purchased  : ${result.tokensReceivedDecimal}`);
-          console.log(`   • Price Impact      : ${result.priceImpact}`);
-          console.log(`   • Fees              : ${result.totalFees}`);
-          if (cfg.showQuoteDetails) {
-            console.log(`   • Quote Details     : ${JSON.stringify(result.quote, null, 2)}`);
-          }
-        } else if (type === "sell") {
-          console.log(`⚔️  Warlord: Selling ${amountParam} of ${mint}...`);
-          const { sellToken } = await getTradeModule();
-          const result = await sellToken(mint, amountParam);
-          console.log("✅ Sell successful!");
-          console.log(`   • TXID                : ${result.txid}`);
-          console.log(`   • SOL Received        : ${result.solReceivedDecimal}`);
-          console.log(`   • Price Impact        : ${result.priceImpact}`);
-          console.log(`   • Fees                : ${result.totalFees}`);
-          if (cfg.showQuoteDetails) {
-            console.log(`   • Quote Details      : ${JSON.stringify(result.quote, null, 2)}`);
-          }
-        }
-        process.exit(0);
-      } catch (err) {
-        console.error(`❌ ${type === "buy" ? "Buy" : "Sell"} failed: ${err.message}`);
-        process.exit(1);
-      }
-    };
-
+    console.log("⚠️  'warlord trade' is deprecated. Use 'warlord buy' or 'warlord sell' instead.");
     if (options.buy) {
-      await executeTrade("buy", options.buy);
+      await executeTrade("buy", mint, options.buy);
     } else if (options.sell) {
-      await executeTrade("sell", options.sell);
+      await executeTrade("sell", mint, options.sell);
     } else {
       console.log("⚠️  Please specify --buy <amount> or --sell <amount>");
       process.exit(1);
@@ -353,7 +620,7 @@ program
 
 USAGE:
   warlord setup
-      Run initial setup wizard (RPC, API key, slippage, etc.)
+      Run initial setup wizard (RPC, slippage, priority fees, Jito, etc.)
 
   warlord config view
       View current configuration
@@ -363,6 +630,12 @@ USAGE:
 
   warlord config set <key> <value>
       Set a single config key
+
+  warlord config wizard
+      Interactive config editor with type validation
+
+  warlord config list
+      List available config keys and types
 
   warlord keychain store
       Store your private key in the macOS Keychain (recommended)
@@ -374,8 +647,8 @@ USAGE:
   warlord keychain delete
       Delete the private key from macOS Keychain
 
-  warlord trade <mint> -b <amount>
-  warlord trade <mint> -s <amount>
+  warlord buy <mint> <amount>
+  warlord sell <mint> <amount>
       Buy or sell a token. Amount formats:
         • Fixed amount (e.g. 0.5 or 100)
         • Percent of holdings (e.g. 50%)
@@ -398,7 +671,7 @@ NOTES:
   • You may see errors about rate limits.  This is largely due to using the free endpoint,
       but they do happen occasionally.  Your trade may still go through because those errors happen
       while we're waiting for trade confirmation.
-  • You may use either --buy/-b or --sell/-s flags
+  • Use warlord buy or warlord sell for trades
   • Buying with "auto" is NOT supported — use a number or percent
   • Your private key is never stored in plain text — use the Keychain for secure access
   • Quote details can be toggled in config or during setup

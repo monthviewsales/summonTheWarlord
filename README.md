@@ -48,7 +48,7 @@ node warlord-cli.js setup
 ```
 
 This:
-- Creates/updates your config (RPC URL, API key, slippage, etc.)  
+- Creates/updates your config (RPC URL, slippage, priority fees, etc.)  
 - Stores your private key securely in macOS Keychain  
 - Prompts macOS notification permissions  
 
@@ -58,12 +58,12 @@ This:
 
 ### Buy with 0.1 SOL
 ```bash
-warlord trade <TOKEN_MINT> -b 0.1
+warlord buy <TOKEN_MINT> 0.1
 ```
 
 ### Sell 50% of holdings
 ```bash
-warlord trade <TOKEN_MINT> -s 50%
+warlord sell <TOKEN_MINT> 50%
 ```
 
 ---
@@ -129,17 +129,22 @@ You can manage it with:
 warlord config view
 warlord config edit
 warlord config set <key> <value>
+warlord config wizard
+warlord config list
 ```
+
+Tip: use `warlord config wizard` for validated prompts and selector-based choices.
 
 Key options:
 - `rpcUrl` (the CLI will append `advancedTx=true` if missing)
-- `swapAPIKey`
-- `slippage` (number, %)
+- `slippage` (number or `"auto"`)
 - `priorityFee` (number or `"auto"`)
-- `priorityFeeLevel` (`min|low|medium|high|veryHigh|unsafeMax`)
+- `priorityFeeLevel` (`min|low|medium|high|veryHigh`) — required when `priorityFee="auto"`
 - `txVersion` (`v0` or `legacy`)
 - `showQuoteDetails` (`true`/`false`)
 - `DEBUG_MODE` (`true`/`false`)
+- `jito.enabled` (`true`/`false`)
+- `jito.tip` (number, SOL)
 
 Override config location (useful for CI or tests):
 - `SUMMON_WARLORD_CONFIG_HOME=/custom/config/dir`
