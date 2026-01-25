@@ -43,7 +43,8 @@ test("loadConfig writes defaults when missing", async () => {
 
   expect(cfg.rpcUrl).toBe("https://rpc.solanatracker.io/public?advancedTx=true");
   expect(cfg.priorityFee).toBe("auto");
-  expect(cfg.swapAPIKey).toBe("jduck-d815-4c28-b85d-17e9fc3a21a8");
+  expect(cfg.priorityFeeLevel).toBe("medium");
+  expect(cfg.jito).toEqual({ enabled: false, tip: 0.0001 });
 
   const fileStat = await fs.stat(configPath);
   expect(fileStat.mode & 0o777).toBe(0o600);
@@ -61,7 +62,7 @@ test("loadConfig merges missing defaults", async () => {
 
   expect(cfg.rpcUrl).toBe("https://example");
   expect(cfg.slippage).toBe(5);
-  expect(cfg.priorityFeeLevel).toBe("low");
+  expect(cfg.priorityFeeLevel).toBe("medium");
   expect(cfg.txVersion).toBe("v0");
 });
 
@@ -89,8 +90,8 @@ test("saveConfig persists updates with secure permissions", async () => {
     priorityFeeLevel: "medium",
     txVersion: "legacy",
     showQuoteDetails: true,
-    swapAPIKey: "custom-key",
     DEBUG_MODE: true,
+    jito: { enabled: true, tip: 0.0002 },
   };
 
   await saveConfig(newConfig);

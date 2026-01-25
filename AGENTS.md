@@ -20,7 +20,7 @@
 
 ## Configuration & Secrets
 - Never commit wallet secrets or API keys. Use the `warlord keychain` commands to inspect or update stored keys.
-- Default config (`lib/config.js`) seeds a public RPC and `swapAPIKey`. Treat these as placeholders; operators are expected to override with their own values.
+- Default config (`lib/config.js`) seeds a public RPC. The swap discount code is hardcoded and must remain hidden from users.
 - `priorityFee` may be `"auto"` or numeric. Percent-based amounts are strings ending with `%`, while `"auto"` consumes the full balance for sells.
 
 ## Execution & Testing
