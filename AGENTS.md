@@ -5,6 +5,13 @@
 - Configuration lives in a JSON file under `~/Library/Application Support/summonTheWarlord/config.json`; sensitive keys are managed via macOS Keychain (`utils/keychain.js`).
 - Notifications are macOS-only (`utils/notify.js`); the project is not intended to run on other operating systems.
 
+## Repository Expectations (Codex)
+- Keep changes small and targeted unless a refactor is explicitly requested.
+- Run `npm test` after changes in `lib/`, `utils/`, `warlord-cli.js`, or `test/`.
+- Never log or persist private keys or API keys; use the Keychain flows.
+- Prefer `rg` for search and `apply_patch` for focused edits.
+- If a change affects on-chain trades, call out manual verification steps.
+
 ## Environment & Tooling
 - Target Node.js ≥18 with ES modules enabled. Dependencies are already vendored via `npm install`.
 - Assumes macOS access to Keychain; avoid running flows that bypass secure storage.
@@ -18,7 +25,7 @@
 
 ## Execution & Testing
 - Run the CLI via `node warlord-cli.js ...` or the `warlord` bin. Buying with `"auto"` is disallowed; selling supports `"auto"` and percentage strings.
-- There is no automated test suite beyond `npm test` (placeholder). Validate critical paths manually: fetching swap instructions and executing swaps against Solana mainnet.
+- Automated tests live under `npm test` (Node's built-in test runner). Validate critical paths manually: fetching swap instructions and executing swaps against Solana mainnet.
 - When debugging trades, log the swap response only if `showQuoteDetails` is true to avoid noisy console output.
 
 ## Development Notes
@@ -32,3 +39,11 @@
 - Ensure RPC URLs remain healthy; the CLI appends `advancedTx=true` but still relies on operator-provided hosts for reliability.
 - Confirm macOS notification permissions during setup (`warlord setup`) so users see trade confirmations.
 
+## Codex Instruction Notes
+- This file is repository-level guidance. Add `AGENTS.override.md` in a subdirectory when a team needs specialized rules.
+- Keep instructions concise; if this file grows large, split guidance across subdirectories to avoid truncation.
+
+## Review Checklist (Codex)
+- No changes that bypass Keychain storage or expose secrets in logs.
+- RPC URLs still include `advancedTx=true`, and swap fee changes update both buy/sell paths.
+- If `solana-swap` or RPC behavior changes, note manual verification steps.
