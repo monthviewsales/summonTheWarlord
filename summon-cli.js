@@ -659,13 +659,13 @@ program
         // Try base58 format
         const bytes = bs58.decode(rawKey);
         keypair = Keypair.fromSecretKey(bytes);
-      } catch (err) {
+      } catch {
         try {
           // Try JSON array format
           const arr = JSON.parse(rawKey);
           if (!Array.isArray(arr)) throw new Error("Not an array");
           keypair = Keypair.fromSecretKey(Uint8Array.from(arr));
-        } catch (jsonErr) {
+        } catch {
           throw new Error("Private key is neither base58 nor valid JSON array.");
         }
       }
