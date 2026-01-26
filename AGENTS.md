@@ -1,13 +1,13 @@
 # summonTheWarlord — Agent Guide
 
 ## Project Summary
-- CLI (`warlord-cli.js`) wraps SolanaTracker's swap SDK (`solana-swap`) to buy/sell SPL tokens with a configured wallet (`lib/trades.js`).
+- CLI (`summon-cli.js`) wraps SolanaTracker's swap SDK (`solana-swap`) to buy/sell SPL tokens with a configured wallet (`lib/trades.js`).
 - Configuration lives in a JSON file under `~/Library/Application Support/summonTheWarlord/config.json`; sensitive keys are managed via macOS Keychain (`utils/keychain.js`).
 - Notifications are macOS-only (`utils/notify.js`); the project is not intended to run on other operating systems.
 
 ## Repository Expectations (Codex)
 - Keep changes small and targeted unless a refactor is explicitly requested.
-- Run `npm test` after changes in `lib/`, `utils/`, `warlord-cli.js`, or `test/`.
+- Run `npm test` and `npm run lint` after changes in `lib/`, `utils/`, `summon-cli.js`, or `test/`.
 - Never log or persist private keys or API keys; use the Keychain flows.
 - Prefer `rg` for search and `apply_patch` for focused edits.
 - If a change affects on-chain trades, call out manual verification steps.
@@ -19,12 +19,12 @@
 - The Solana swap backend is currently `https://swap-v2.solanatracker.io`. If receiving HTTP 500 errors, confirm whether SolanaTracker has migrated to a new base URL and update the SDK or call `tracker.setBaseUrl(...)` accordingly.
 
 ## Configuration & Secrets
-- Never commit wallet secrets or API keys. Use the `warlord keychain` commands to inspect or update stored keys.
-- Default config (`lib/config.js`) seeds a public RPC and `swapAPIKey`. Treat these as placeholders; operators are expected to override with their own values.
+- Never commit wallet secrets or API keys. Use the `summon keychain` commands to inspect or update stored keys.
+- Default config (`lib/config.js`) seeds a public RPC. The swap discount code is hardcoded and must remain hidden from users.
 - `priorityFee` may be `"auto"` or numeric. Percent-based amounts are strings ending with `%`, while `"auto"` consumes the full balance for sells.
 
 ## Execution & Testing
-- Run the CLI via `node warlord-cli.js ...` or the `warlord` bin. Buying with `"auto"` is disallowed; selling supports `"auto"` and percentage strings.
+- Run the CLI via `node summon-cli.js ...` or the `summon` bin. Buying with `"auto"` is disallowed; selling supports `"auto"` and percentage strings.
 - Automated tests live under `npm test` (Node's built-in test runner). Validate critical paths manually: fetching swap instructions and executing swaps against Solana mainnet.
 - When debugging trades, log the swap response only if `showQuoteDetails` is true to avoid noisy console output.
 
@@ -37,7 +37,7 @@
 ## Operational Checks
 - If swaps suddenly fail, test the upstream REST endpoints directly with `curl` to isolate SDK vs. backend issues.
 - Ensure RPC URLs remain healthy; the CLI appends `advancedTx=true` but still relies on operator-provided hosts for reliability.
-- Confirm macOS notification permissions during setup (`warlord setup`) so users see trade confirmations.
+- Confirm macOS notification permissions during setup (`summon setup`) so users see trade confirmations.
 
 ## Codex Instruction Notes
 - This file is repository-level guidance. Add `AGENTS.override.md` in a subdirectory when a team needs specialized rules.

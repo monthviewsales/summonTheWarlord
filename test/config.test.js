@@ -1,5 +1,4 @@
-import test, { beforeEach, afterEach } from "node:test";
-import assert from "node:assert/strict";
+import { afterEach, beforeEach, test, expect } from "@jest/globals";
 import os from "node:os";
 import path from "node:path";
 import fs from "fs-extra";
@@ -10,16 +9,16 @@ let originalConfigHome;
 let tempConfigHome;
 
 beforeEach(async () => {
-  originalConfigHome = process.env.SUMMON_WARLORD_CONFIG_HOME;
-  tempConfigHome = await fs.mkdtemp(path.join(os.tmpdir(), "warlord-config-"));
-  process.env.SUMMON_WARLORD_CONFIG_HOME = tempConfigHome;
+  originalConfigHome = process.env.SUMMON_CONFIG_HOME;
+  tempConfigHome = await fs.mkdtemp(path.join(os.tmpdir(), "summon-config-"));
+  process.env.SUMMON_CONFIG_HOME = tempConfigHome;
 });
 
 afterEach(async () => {
   if (originalConfigHome === undefined) {
-    delete process.env.SUMMON_WARLORD_CONFIG_HOME;
+    delete process.env.SUMMON_CONFIG_HOME;
   } else {
-    process.env.SUMMON_WARLORD_CONFIG_HOME = originalConfigHome;
+    process.env.SUMMON_CONFIG_HOME = originalConfigHome;
   }
   originalConfigHome = undefined;
 
@@ -29,28 +28,30 @@ afterEach(async () => {
   }
 });
 
-test("getConfigPath respects SUMMON_WARLORD_CONFIG_HOME", () => {
+test("getConfigPath respects SUMMON_CONFIG_HOME", () => {
   const expected = path.join(tempConfigHome, "summonTheWarlord", "config.json");
-  assert.equal(getConfigPath(), expected);
+  expect(getConfigPath()).toBe(expected);
 });
 
 test("loadConfig writes defaults when missing", async () => {
   const configPath = getConfigPath();
   const cfg = await loadConfig();
 
-  assert.ok(await fs.pathExists(configPath), "config file should be created");
+  await expect(fs.pathExists(configPath)).resolves.toBe(true);
   const fileContents = await fs.readJson(configPath);
-  assert.deepEqual(cfg, fileContents, "config returned should match file contents");
+  expect(cfg).toEqual(fileContents);
 
-  assert.equal(cfg.rpcUrl, "https://rpc.solanatracker.io/public?advancedTx=true");
-  assert.equal(cfg.priorityFee, "auto");
-  assert.equal(cfg.swapAPIKey, "jduck-d815-4c28-b85d-17e9fc3a21a8");
+  expect(cfg.rpcUrl).toBe("https://rpc.solanatracker.io/public?advancedTx=true");
+  expect(cfg.priorityFee).toBe("auto");
+  expect(cfg.priorityFeeLevel).toBe("medium");
+  expect(cfg.jito).toEqual({ enabled: false, tip: 0.0001 });
+  expect(cfg.notificationsEnabled).toBe(true);
 
   const fileStat = await fs.stat(configPath);
-  assert.equal(fileStat.mode & 0o777, 0o600, "config file permissions should be 600");
+  expect(fileStat.mode & 0o777).toBe(0o600);
 
   const dirStat = await fs.stat(path.dirname(configPath));
-  assert.equal(dirStat.mode & 0o777, 0o700, "config directory permissions should be 700");
+  expect(dirStat.mode & 0o777).toBe(0o700);
 });
 
 test("loadConfig merges missing defaults", async () => {
@@ -60,10 +61,10 @@ test("loadConfig merges missing defaults", async () => {
 
   const cfg = await loadConfig();
 
-  assert.equal(cfg.rpcUrl, "https://example");
-  assert.equal(cfg.slippage, 5);
-  assert.equal(cfg.priorityFeeLevel, "low", "missing default should be merged");
-  assert.equal(cfg.txVersion, "v0", "txVersion default should be added");
+  expect(cfg.rpcUrl).toBe("https://example");
+  expect(cfg.slippage).toBe(5);
+  expect(cfg.priorityFeeLevel).toBe("medium");
+  expect(cfg.txVersion).toBe("v0");
 });
 
 test("loadConfig recovers from invalid JSON", async () => {
@@ -74,11 +75,11 @@ test("loadConfig recovers from invalid JSON", async () => {
   const cfg = await loadConfig();
 
   const stored = await fs.readJson(configPath);
-  assert.deepEqual(cfg, stored, "config should be restored to defaults");
+  expect(cfg).toEqual(stored);
 
   const dirEntries = await fs.readdir(path.dirname(configPath));
   const backups = dirEntries.filter((name) => name.startsWith("config.json.invalid-"));
-  assert.ok(backups.length >= 1, "invalid config backup should be created");
+  expect(backups.length).toBeGreaterThanOrEqual(1);
 });
 
 test("saveConfig persists updates with secure permissions", async () => {
@@ -90,15 +91,16 @@ test("saveConfig persists updates with secure permissions", async () => {
     priorityFeeLevel: "medium",
     txVersion: "legacy",
     showQuoteDetails: true,
-    swapAPIKey: "custom-key",
     DEBUG_MODE: true,
+    notificationsEnabled: false,
+    jito: { enabled: true, tip: 0.0002 },
   };
 
   await saveConfig(newConfig);
 
   const stored = await fs.readJson(configPath);
-  assert.deepEqual(stored, newConfig);
+  expect(stored).toEqual(newConfig);
 
   const fileStat = await fs.stat(configPath);
-  assert.equal(fileStat.mode & 0o777, 0o600);
+  expect(fileStat.mode & 0o777).toBe(0o600);
 });
