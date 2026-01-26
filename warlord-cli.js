@@ -40,6 +40,7 @@ const CONFIG_HELP = [
   { key: "txVersion", type: TX_VERSIONS.join(" | "), note: "Transaction version" },
   { key: "showQuoteDetails", type: "true | false", note: "Print quote details after swaps" },
   { key: "DEBUG_MODE", type: "true | false", note: "Enable verbose SDK logs" },
+  { key: "notificationsEnabled", type: "true | false", note: "Enable macOS notifications" },
   { key: "jito.enabled", type: "true | false", note: "Enable Jito bundles" },
   { key: "jito.tip", type: "number", note: "Tip in SOL when Jito enabled" },
 ];
@@ -53,6 +54,8 @@ const ANSI = {
   blue: "\x1b[34m",
   purple: "\x1b[35m",
   green: "\x1b[32m",
+  yellow: "\x1b[33m",
+  red: "\x1b[31m",
 };
 
 const paint = (text, color) => (COLOR_ENABLED ? `${color}${text}${ANSI.reset}` : text);
@@ -103,6 +106,42 @@ function formatBox({ title, rows }) {
   return [topBorder, ...lines, bottomBorder].join("\n");
 }
 
+function formatPlainBox({ title, rows }) {
+  const normalizedRows = rows.map(([label, value]) => [String(label), String(value)]);
+  const labelWidth = Math.max(...normalizedRows.map(([label]) => label.length), 0);
+  const valueWidth = Math.max(...normalizedRows.map(([, value]) => value.length), 0);
+  const titleText = title ? ` ${title} ` : "";
+  const innerWidth = Math.max(labelWidth + 3 + valueWidth, titleText.length);
+  const totalWidth = innerWidth + 2;
+
+  let topBorder = `┌${"─".repeat(totalWidth)}┐`;
+  if (titleText) {
+    const left = Math.floor((totalWidth - titleText.length) / 2);
+    const right = totalWidth - titleText.length - left;
+    topBorder = `┌${"─".repeat(left)}${titleText}${"─".repeat(right)}┐`;
+  }
+
+  const lines = normalizedRows.map(([label, value]) => {
+    const labelText = label.padEnd(labelWidth);
+    const content = `${labelText} : ${value}`;
+    const contentLength = labelText.length + 3 + value.length;
+    const padding = " ".repeat(Math.max(0, innerWidth - contentLength));
+    return `│ ${content}${padding} │`;
+  });
+
+  const bottomBorder = `└${"─".repeat(totalWidth)}┘`;
+  return [topBorder, ...lines, bottomBorder].join("\n");
+}
+
+function renderStatusBox({ title, rows, tone }) {
+  const box = formatPlainBox({ title, rows });
+  const colored = box
+    .split("\n")
+    .map((line) => paint(line, tone))
+    .join("\n");
+  console.log(colored);
+}
+
 function renderConfigSummary(cfg, configPath, title = "CONFIG") {
   const jitoEnabled = cfg.jito?.enabled ? "true" : "false";
   const jitoTip = cfg.jito?.enabled ? cfg.jito.tip : "-";
@@ -115,6 +154,7 @@ function renderConfigSummary(cfg, configPath, title = "CONFIG") {
     ["Tx version", cfg.txVersion],
     ["Show quote", cfg.showQuoteDetails],
     ["Debug mode", cfg.DEBUG_MODE],
+    ["Notifications", cfg.notificationsEnabled],
     ["Jito enabled", jitoEnabled],
     ["Jito tip (SOL)", jitoTip],
   ];
@@ -239,6 +279,13 @@ async function runConfigWizard({ cfg, rl }) {
 
   clearScreen();
   renderWizardHeader();
+  const notificationsEnabled = await promptSelect(rl, "Enable notifications", ["true", "false"], {
+    current: nextCfg.notificationsEnabled ? "true" : "false",
+  });
+  nextCfg.notificationsEnabled = notificationsEnabled === "true";
+
+  clearScreen();
+  renderWizardHeader();
   const jitoEnabled = await promptSelect(rl, "Enable Jito bundles", ["true", "false"], {
     current: nextCfg.jito.enabled ? "true" : "false",
   });
@@ -284,47 +331,84 @@ async function executeTrade(type, mint, amountArg) {
   }
 
   try {
+    const mintDisplay = `${mint.slice(0, 4)}…${mint.slice(-4)}`;
+    const amountDisplay = String(amountParam);
+    const baseRows = [
+      ["Action", type === "buy" ? "Buy" : "Sell"],
+      ["Mint", mintDisplay],
+      ["Amount", amountDisplay],
+    ];
+    clearScreen();
+    renderStatusBox({
+      title: "PENDING",
+      tone: ANSI.yellow,
+      rows: [
+        ...baseRows,
+        ["TXID", "-"],
+        ["Explorer", "-"],
+        ["Info", "Submitting swap..."],
+      ],
+    });
+
     if (type === "buy") {
       if (amountParam === "auto") {
         console.error("⚠️  Buying with 'auto' isn’t supported. Use a number or '<percent>%'.");
         process.exit(1);
       }
 
-      console.log(`🚀 Warlord: Buying ${amountParam} of ${mint}...`);
       const { buyToken } = await getTradeModule();
       const result = await buyToken(mint, amountParam);
-      console.log("✅ Buy successful!");
+      clearScreen();
+      const info = `Received ${result.tokensReceivedDecimal} tokens | Fees ${result.totalFees} | Impact ${result.priceImpact}`;
       const buyRows = [
+        ...baseRows,
         ["TXID", result.txid],
         ["Explorer", `https://orbmarkets.io/tx/${result.txid}`],
-        ["Tokens purchased", result.tokensReceivedDecimal],
-        ["Price impact", result.priceImpact],
-        ["Fees", result.totalFees],
+        ["Info", info],
+        ["Verification", result.verificationStatus],
       ];
-      console.log(formatBox({ title: "BUY SUMMARY", rows: buyRows }));
+      renderStatusBox({ title: "SUCCESS", rows: buyRows, tone: ANSI.green });
       if (cfg.showQuoteDetails) {
         console.log(`   • Quote Details     : ${JSON.stringify(result.quote, null, 2)}`);
       }
     } else if (type === "sell") {
-      console.log(`⚔️  Warlord: Selling ${amountParam} of ${mint}...`);
       const { sellToken } = await getTradeModule();
       const result = await sellToken(mint, amountParam);
-      console.log("✅ Sell successful!");
+      clearScreen();
+      const info = `Received ${result.solReceivedDecimal} SOL | Fees ${result.totalFees} | Impact ${result.priceImpact}`;
       const sellRows = [
+        ...baseRows,
         ["TXID", result.txid],
         ["Explorer", `https://orbmarkets.io/tx/${result.txid}`],
-        ["SOL received", result.solReceivedDecimal],
-        ["Price impact", result.priceImpact],
-        ["Fees", result.totalFees],
+        ["Info", info],
+        ["Verification", result.verificationStatus],
       ];
-      console.log(formatBox({ title: "SELL SUMMARY", rows: sellRows }));
+      renderStatusBox({ title: "SUCCESS", rows: sellRows, tone: ANSI.green });
       if (cfg.showQuoteDetails) {
         console.log(`   • Quote Details      : ${JSON.stringify(result.quote, null, 2)}`);
       }
     }
     process.exit(0);
   } catch (err) {
-    console.error(`❌ ${type === "buy" ? "Buy" : "Sell"} failed: ${err.message}`);
+    clearScreen();
+    const errorMessage = err?.message || "Unknown error";
+    const txidMatch = errorMessage.match(/[1-9A-HJ-NP-Za-km-z]{32,}/);
+    const txid = txidMatch ? txidMatch[0] : "-";
+    const explorer = txidMatch ? `https://orbmarkets.io/tx/${txid}` : "-";
+    const mintDisplay = `${mint.slice(0, 4)}…${mint.slice(-4)}`;
+    const amountDisplay = String(amountParam);
+    renderStatusBox({
+      title: "FAILED",
+      tone: ANSI.red,
+      rows: [
+        ["Action", type === "buy" ? "Buy" : "Sell"],
+        ["Mint", mintDisplay],
+        ["Amount", amountDisplay],
+        ["TXID", txid],
+        ["Explorer", explorer],
+        ["Error", errorMessage],
+      ],
+    });
     process.exit(1);
   }
 }
@@ -464,16 +548,20 @@ program
     console.log("🧠 Setup complete.");
 
     // Test macOS notifications so users can allow permissions now
-    try {
-      notify({
-        title: "summonTheWarlord",
-        subtitle: "Setup complete",
-        message: "If you see this, notifications are enabled.",
-        sound: "Ping",
-      });
-      console.log("🔔 Test notification sent. If you see it, notifications are enabled.");
-    } catch {
-      console.warn("⚠️ Unable to send test notification. You may need to enable notifications for your terminal.");
+    if (updated.notificationsEnabled !== false) {
+      try {
+        notify({
+          title: "summonTheWarlord",
+          subtitle: "Setup complete",
+          message: "If you see this, notifications are enabled.",
+          sound: "Ping",
+        });
+        console.log("🔔 Test notification sent. If you see it, notifications are enabled.");
+      } catch {
+        console.warn("⚠️ Unable to send test notification. You may need to enable notifications for your terminal.");
+      }
+    } else {
+      console.log("🔕 Notifications are disabled in config.");
     }
   });
 

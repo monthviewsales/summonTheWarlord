@@ -143,6 +143,7 @@ Key options:
 - `txVersion` (`v0` or `legacy`)
 - `showQuoteDetails` (`true`/`false`)
 - `DEBUG_MODE` (`true`/`false`)
+- `notificationsEnabled` (`true`/`false`)
 - `jito.enabled` (`true`/`false`)
 - `jito.tip` (number, SOL)
 

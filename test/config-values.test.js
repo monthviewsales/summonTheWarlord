@@ -20,6 +20,11 @@ test("normalizeConfigValue accepts priorityFee auto or number", () => {
   expect(normalizeConfigValue("priorityFee", 0.1, { strict: true })).toBe(0.1);
 });
 
+test("normalizeConfigValue accepts notificationsEnabled boolean", () => {
+  expect(normalizeConfigValue("notificationsEnabled", true, { strict: true })).toBe(true);
+  expect(normalizeConfigValue("notificationsEnabled", "false", { strict: true })).toBe(false);
+});
+
 test("normalizeConfigValue validates priorityFeeLevel", () => {
   expect(normalizeConfigValue("priorityFeeLevel", "medium", { strict: true })).toBe("medium");
   expect(() => normalizeConfigValue("priorityFeeLevel", "unsafeMax", { strict: true })).toThrow();
