@@ -4,7 +4,7 @@
 ![Node](https://img.shields.io/badge/node-%3E%3D18.x-brightgreen)
 ![Platform](https://img.shields.io/badge/platform-macOS-blue)
 
-**Version:** 2.0.1
+**Version:** 2.0.2
 
 > _Relic software unearthed from VAULT77.  
 > For trench operators only. macOS‑native. Handle with care._  
