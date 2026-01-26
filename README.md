@@ -1,6 +1,6 @@
 # summonTheWarlord — a VAULT77 🔐77 relic
 
-![Release](https://img.shields.io/github/v/release/monthviewsales/summonTheWarlord)
+![Release](https://img.shields.io/npm/v/@vault77/summon?label=release)
 ![Node](https://img.shields.io/badge/node-%3E%3D18.x-brightgreen)
 ![Platform](https://img.shields.io/badge/platform-macOS-blue)
 
@@ -178,15 +178,10 @@ Dependencies:
 - `commander` — [MIT](https://github.com/tj/commander.js/blob/HEAD/LICENSE)
 - `fs-extra` — [MIT](https://github.com/jprichardson/node-fs-extra/blob/HEAD/LICENSE)
 - `keytar` — [MIT](https://github.com/atom/node-keytar/blob/HEAD/LICENSE)
-- `npm` — [Artistic-2.0](https://github.com/npm/cli/blob/HEAD/LICENSE)
 - `open` — [MIT](https://github.com/sindresorhus/open/blob/HEAD/LICENSE)
 - `solana-swap` — [ISC](https://github.com/YZYLAB/solana-swap/blob/HEAD/LICENSE)
 
 Tooling:
 
 - `eslint` — [MIT](https://github.com/eslint/eslint/blob/HEAD/LICENSE)
-- `eslint-config-standard` — [MIT](https://github.com/standard/eslint-config-standard/blob/HEAD/LICENSE)
-- `eslint-plugin-import` — [MIT](https://github.com/import-js/eslint-plugin-import/blob/HEAD/LICENSE)
-- `eslint-plugin-n` — [MIT](https://github.com/eslint-community/eslint-plugin-n/blob/HEAD/LICENSE)
-- `eslint-plugin-promise` — [ISC](https://github.com/eslint-community/eslint-plugin-promise/blob/HEAD/LICENSE)
 - `jest` — [MIT](https://github.com/jestjs/jest/blob/HEAD/LICENSE)
