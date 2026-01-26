@@ -6,23 +6,26 @@
 
 **Version:** 2.0.0
 
-> *Relic software unearthed from VAULT77.  
-> For trench operators only. macOS‑native. Handle with care.*  
+> _Relic software unearthed from VAULT77.  
+> For trench operators only. macOS‑native. Handle with care._  
 > It executes trades with speed and precision — a lifeline to save our futures.
 
 ---
 
+⚠️ **Operator notice:** summonTheWarlord executes live on‑chain swaps. Always verify token mints, amounts, and configuration values before execution. If you buy crap its your fault.
+
 ## Requirements
-- Node.js >= 18  
-- A [SolanaTracker.io](https://www.solanatracker.io/?ref=0NGJ5PPN) account  
-- macOS (Keychain required; notifications optional — other OSes are not supported)
+
+- Node.js >= 18
+- A [SolanaTracker.io](https://www.solanatracker.io/?ref=0NGJ5PPN) account
+- macOS (required for native Keychain security and system notifications; other operating systems are not supported)
 
 ---
 
 ## 📡 Connect with VAULT77
 
-- **VAULT77 Community:** https://x.com/i/communities/1962257350309650488  
-- **Telegram:** https://t.me/BurnWalletBroadcast  
+- **VAULT77 Community:** https://x.com/i/communities/1962257350309650488
+- **Telegram:** https://t.me/BurnWalletBroadcast
 
 ---
 
@@ -41,20 +44,23 @@ summon setup
 ```
 
 This:
-- Creates/updates your config (RPC URL, slippage, priority fees, etc.)  
-- Stores your private key securely in macOS Keychain  
-- Prompts macOS notification permissions (optional)  
+
+- Creates/updates your config (RPC URL, slippage, priority fees, etc.)
+- Stores your private key securely in macOS Keychain
+- Prompts macOS notification permissions (optional)
 
 ---
 
 # ⚔️ Trading Examples
 
 ### Buy with 0.1 SOL
+
 ```bash
 summon buy <TOKEN_MINT> 0.1
 ```
 
 ### Sell 50% of holdings
+
 ```bash
 summon sell <TOKEN_MINT> 50%
 ```
@@ -88,8 +94,8 @@ See **AGENTS.md** for building conventions, coding rules, and automation guidanc
 
 # 🛡 Support
 
-- **VAULT77 Community:** https://x.com/i/communities/1962257350309650488  
-- **Telegram:** https://t.me/BurnWalletBroadcast  
+- **VAULT77 Community:** https://x.com/i/communities/1962257350309650488
+- **Telegram:** https://t.me/BurnWalletBroadcast
 
 ---
 
@@ -112,6 +118,7 @@ summon config list
 Tip: use `summon config wizard` for validated prompts and selector-based choices.
 
 Key options:
+
 - `rpcUrl` (the CLI will append `advancedTx=true` if missing)
 - `slippage` (number or `"auto"`)
 - `priorityFee` (number or `"auto"`)
@@ -126,6 +133,7 @@ Key options:
 If you want fewer popups, set `notificationsEnabled` to `false`.
 
 Override config location (useful for CI or tests):
+
 - `SUMMON_CONFIG_HOME=/custom/config/dir`
 - `SUMMON_CONFIG_PATH=/custom/path/config.json`
 
@@ -163,6 +171,7 @@ Runs checks for config, Keychain access, RPC reachability, swap API health, and 
 This never would have been possible without Open Source Software and these contributions.
 
 Dependencies:
+
 - `@solana/web3.js` — [MIT](https://github.com/solana-foundation/solana-web3.js/blob/HEAD/LICENSE)
 - `axios` — [MIT](https://github.com/axios/axios/blob/HEAD/LICENSE)
 - `bs58` — [MIT](https://github.com/cryptocoinjs/bs58/blob/HEAD/LICENSE)
@@ -174,6 +183,7 @@ Dependencies:
 - `solana-swap` — [ISC](https://github.com/YZYLAB/solana-swap/blob/HEAD/LICENSE)
 
 Tooling:
+
 - `eslint` — [MIT](https://github.com/eslint/eslint/blob/HEAD/LICENSE)
 - `eslint-config-standard` — [MIT](https://github.com/standard/eslint-config-standard/blob/HEAD/LICENSE)
 - `eslint-plugin-import` — [MIT](https://github.com/import-js/eslint-plugin-import/blob/HEAD/LICENSE)
