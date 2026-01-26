@@ -15,7 +15,7 @@
 ## Requirements
 - Node.js >= 18  
 - A [SolanaTracker.io](https://www.solanatracker.io/?ref=0NGJ5PPN) account  
-- macOS (Keychain + notifications required — other OSes are not supported)
+- macOS (Keychain required; notifications optional — other OSes are not supported)
 
 ---
 
@@ -50,7 +50,7 @@ node warlord-cli.js setup
 This:
 - Creates/updates your config (RPC URL, slippage, priority fees, etc.)  
 - Stores your private key securely in macOS Keychain  
-- Prompts macOS notification permissions  
+- Prompts macOS notification permissions (optional)  
 
 ---
 
@@ -65,6 +65,8 @@ warlord buy <TOKEN_MINT> 0.1
 ```bash
 warlord sell <TOKEN_MINT> 50%
 ```
+
+Note: `warlord trade` still works but is deprecated.
 
 ---
 
@@ -147,6 +149,8 @@ Key options:
 - `jito.enabled` (`true`/`false`)
 - `jito.tip` (number, SOL)
 
+If you want fewer popups, set `notificationsEnabled` to `false`.
+
 Override config location (useful for CI or tests):
 - `SUMMON_WARLORD_CONFIG_HOME=/custom/config/dir`
 - `SUMMON_WARLORD_CONFIG_PATH=/custom/path/config.json`
@@ -176,4 +180,4 @@ npm run lint
 warlord doctor
 ```
 
-Runs checks for config, Keychain access, RPC reachability, swap API health, and macOS notifications.
+Runs checks for config, Keychain access, RPC reachability, swap API health, and macOS notifications (skipped when disabled).
