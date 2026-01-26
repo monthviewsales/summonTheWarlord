@@ -17,23 +17,23 @@ let originalConfigPath;
 let tempConfigHome;
 
 beforeEach(async () => {
-  originalConfigHome = process.env.SUMMON_WARLORD_CONFIG_HOME;
-  originalConfigPath = process.env.SUMMON_WARLORD_CONFIG_PATH;
-  tempConfigHome = await fs.mkdtemp(path.join(os.tmpdir(), "warlord-config-"));
-  process.env.SUMMON_WARLORD_CONFIG_HOME = tempConfigHome;
-  delete process.env.SUMMON_WARLORD_CONFIG_PATH;
+  originalConfigHome = process.env.SUMMON_CONFIG_HOME;
+  originalConfigPath = process.env.SUMMON_CONFIG_PATH;
+  tempConfigHome = await fs.mkdtemp(path.join(os.tmpdir(), "summon-config-"));
+  process.env.SUMMON_CONFIG_HOME = tempConfigHome;
+  delete process.env.SUMMON_CONFIG_PATH;
 });
 
 afterEach(async () => {
   if (originalConfigHome === undefined) {
-    delete process.env.SUMMON_WARLORD_CONFIG_HOME;
+    delete process.env.SUMMON_CONFIG_HOME;
   } else {
-    process.env.SUMMON_WARLORD_CONFIG_HOME = originalConfigHome;
+    process.env.SUMMON_CONFIG_HOME = originalConfigHome;
   }
   if (originalConfigPath === undefined) {
-    delete process.env.SUMMON_WARLORD_CONFIG_PATH;
+    delete process.env.SUMMON_CONFIG_PATH;
   } else {
-    process.env.SUMMON_WARLORD_CONFIG_PATH = originalConfigPath;
+    process.env.SUMMON_CONFIG_PATH = originalConfigPath;
   }
 
   if (tempConfigHome) {
@@ -42,15 +42,15 @@ afterEach(async () => {
   }
 });
 
-test("getConfigPath respects SUMMON_WARLORD_CONFIG_PATH", () => {
+test("getConfigPath respects SUMMON_CONFIG_PATH", () => {
   const customPath = path.join(os.tmpdir(), "custom-config.json");
-  process.env.SUMMON_WARLORD_CONFIG_PATH = customPath;
+  process.env.SUMMON_CONFIG_PATH = customPath;
   expect(getConfigPath()).toBe(customPath);
 });
 
 test("getConfigPath uses macOS Application Support by default", () => {
-  delete process.env.SUMMON_WARLORD_CONFIG_HOME;
-  delete process.env.SUMMON_WARLORD_CONFIG_PATH;
+  delete process.env.SUMMON_CONFIG_HOME;
+  delete process.env.SUMMON_CONFIG_PATH;
   const configPath = getConfigPath();
   if (process.platform === "darwin") {
     expect(configPath).toContain(path.join("Library", "Application Support", "summonTheWarlord"));

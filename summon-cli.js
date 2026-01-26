@@ -19,8 +19,8 @@ import { runDoctor } from "./lib/doctor.js";
 
 const program = new Command();
 program
-  .name("warlord")
-  .description("Summon the Warlord Solana CLI")
+  .name("summon")
+  .description("Summon Solana CLI")
   .showHelpAfterError(); // show help after invalid flags/args
 
 const CONFIG_KEY_SET = new Set([
@@ -442,7 +442,7 @@ configCmd
     const parsedValue = parseConfigValue(value);
     if (!CONFIG_KEY_SET.has(key)) {
       console.error(`⚠️  Unknown config key: ${key}`);
-      console.error("Run `warlord config list` to see valid keys.");
+      console.error("Run `summon config list` to see valid keys.");
       process.exit(1);
     }
     try {
@@ -508,7 +508,7 @@ program
     const configPath = getConfigPath();
     const cfg = await loadConfig();
 
-    console.log("⚙️  Warlord CLI Setup\n");
+    console.log("⚙️  Summon CLI Setup\n");
     const updated = await runConfigWizard({ cfg, rl });
     await saveConfig(updated);
     console.log(`✅ Config saved to ${configPath}`);
@@ -537,7 +537,7 @@ program
           await storePrivateKey(privKey);
           console.log("🔐 Private key stored securely.");
         } else {
-          console.log("⚠️ No private key stored. You can add one later with `warlord keychain store`.");
+          console.log("⚠️ No private key stored. You can add one later with `summon keychain store`.");
         }
       }
     } catch (e) {
@@ -629,7 +629,7 @@ program
   .option("-b, --buy <amount>", "Spend <amount> SOL (number or '<percent>%') to buy token")
   .option("-s, --sell <amount>", "Sell <amount> tokens (number, 'auto', or '<percent>%')")
   .action(async (mint, options) => {
-    console.log("⚠️  'warlord trade' is deprecated. Use 'warlord buy' or 'warlord sell' instead.");
+    console.log("⚠️  'summon trade' is deprecated. Use 'summon buy' or 'summon sell' instead.");
     if (options.buy) {
       await executeTrade("buy", mint, options.buy);
     } else if (options.sell) {
@@ -704,16 +704,16 @@ program
   .description("Display usage and help information")
   .action(() => {
     console.log(`
-📖 summonTheWarlord CLI Manual
+📖 Summon CLI Manual
 
 FIRST TIME QUICKSTART:
-  1) warlord setup
+  1) summon setup
      Saves config + stores your private key in Keychain.
-  2) warlord config wizard
+  2) summon config wizard
      Review RPC, fees, slippage, notifications, and Jito.
-  3) warlord doctor
+  3) summon doctor
      Confirms RPC + swap API are healthy.
-  4) warlord buy <mint> 0.01
+  4) summon buy <mint> 0.01
      Start small while you learn.
 
 TERMS:
@@ -723,49 +723,48 @@ TERMS:
       - Sell uses token amount, percent (50%), or auto for full balance
 
 USAGE:
-  warlord setup
+  summon setup
       Run initial setup wizard (RPC, slippage, priority fees, Jito, etc.)
 
-  warlord config view
+  summon config view
       View current configuration
 
-  warlord config edit
+  summon config edit
       Edit config in your $EDITOR
 
-  warlord config set <key> <value>
+  summon config set <key> <value>
       Set a single config key
 
-  warlord config wizard
+  summon config wizard
       Interactive config editor with type validation
 
-  warlord config list
+  summon config list
       List available config keys and types
 
-  warlord keychain store
+  summon keychain store
       Store your private key in the macOS Keychain (recommended)
         • Paste either a base58-encoded string OR a JSON array like [12, 34, ...]
 
-  warlord keychain unlock
+  summon keychain unlock
       Retrieve and verify your stored key
 
-  warlord keychain delete
+  summon keychain delete
       Delete the private key from macOS Keychain
 
-  warlord buy <mint> <amount>
-  warlord sell <mint> <amount>
+  summon buy <mint> <amount>
+  summon sell <mint> <amount>
       Buy or sell a token. Amount formats:
         • Fixed amount (e.g. 0.5 or 100)
         • Percent of holdings (e.g. 50%)
         • "auto" (sell only — sells your full balance)
-      Note: warlord trade is deprecated.
 
-  warlord wallet
+  summon wallet
       Open your wallet on SolanaTracker.io
 
-  warlord doctor
+  summon doctor
       Run diagnostics for config, Keychain, RPC, swap API, and notifications
 
-  warlord man
+  summon man
       Display this manual
 
 NOTES:
@@ -776,7 +775,7 @@ NOTES:
   • You may see errors about rate limits.  This is largely due to using the free endpoint,
       but they do happen occasionally.  Your trade may still go through because those errors happen
       while we're waiting for trade confirmation.
-  • Use warlord buy or warlord sell for trades
+  • Use summon buy or summon sell for trades
   • Buying with "auto" is NOT supported — use a number or percent
   • Your private key is never stored in plain text — use the Keychain for secure access
   • Notifications are optional. Toggle notificationsEnabled in config if you want silence.

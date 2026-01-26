@@ -42,7 +42,7 @@ export async function getPrivateKey() {
   try {
     const key = await keytar.getPassword(SERVICE, ACCOUNT);
     if (!key) {
-      throw new KeychainError("Private key not found. Run `warlord keychain store` to save it.");
+      throw new KeychainError("Private key not found. Run `summon keychain store` to save it.");
     }
     return key.trim();
   } catch (err) {

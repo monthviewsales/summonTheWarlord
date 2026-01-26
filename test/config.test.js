@@ -9,16 +9,16 @@ let originalConfigHome;
 let tempConfigHome;
 
 beforeEach(async () => {
-  originalConfigHome = process.env.SUMMON_WARLORD_CONFIG_HOME;
-  tempConfigHome = await fs.mkdtemp(path.join(os.tmpdir(), "warlord-config-"));
-  process.env.SUMMON_WARLORD_CONFIG_HOME = tempConfigHome;
+  originalConfigHome = process.env.SUMMON_CONFIG_HOME;
+  tempConfigHome = await fs.mkdtemp(path.join(os.tmpdir(), "summon-config-"));
+  process.env.SUMMON_CONFIG_HOME = tempConfigHome;
 });
 
 afterEach(async () => {
   if (originalConfigHome === undefined) {
-    delete process.env.SUMMON_WARLORD_CONFIG_HOME;
+    delete process.env.SUMMON_CONFIG_HOME;
   } else {
-    process.env.SUMMON_WARLORD_CONFIG_HOME = originalConfigHome;
+    process.env.SUMMON_CONFIG_HOME = originalConfigHome;
   }
   originalConfigHome = undefined;
 
@@ -28,7 +28,7 @@ afterEach(async () => {
   }
 });
 
-test("getConfigPath respects SUMMON_WARLORD_CONFIG_HOME", () => {
+test("getConfigPath respects SUMMON_CONFIG_HOME", () => {
   const expected = path.join(tempConfigHome, "summonTheWarlord", "config.json");
   expect(getConfigPath()).toBe(expected);
 });
