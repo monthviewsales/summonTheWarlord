@@ -706,6 +706,22 @@ program
     console.log(`
 📖 summonTheWarlord CLI Manual
 
+FIRST TIME QUICKSTART:
+  1) warlord setup
+     Saves config + stores your private key in Keychain.
+  2) warlord config wizard
+     Review RPC, fees, slippage, notifications, and Jito.
+  3) warlord doctor
+     Confirms RPC + swap API are healthy.
+  4) warlord buy <mint> 0.01
+     Start small while you learn.
+
+TERMS:
+  • Mint = token address (base58). Copy it from a Solana explorer or DEX listing.
+  • Amounts:
+      - Buy uses SOL amount (e.g. 0.1)
+      - Sell uses token amount, percent (50%), or auto for full balance
+
 USAGE:
   warlord setup
       Run initial setup wizard (RPC, slippage, priority fees, Jito, etc.)
@@ -741,6 +757,7 @@ USAGE:
         • Fixed amount (e.g. 0.5 or 100)
         • Percent of holdings (e.g. 50%)
         • "auto" (sell only — sells your full balance)
+      Note: warlord trade is deprecated.
 
   warlord wallet
       Open your wallet on SolanaTracker.io
@@ -762,6 +779,9 @@ NOTES:
   • Use warlord buy or warlord sell for trades
   • Buying with "auto" is NOT supported — use a number or percent
   • Your private key is never stored in plain text — use the Keychain for secure access
+  • Notifications are optional. Toggle notificationsEnabled in config if you want silence.
+  • Swaps show Pending → Success/Failed panes. If Verification is pending, open:
+      https://orbmarkets.io/tx/<txid>
   • Quote details can be toggled in config or during setup
   • Always confirm transactions via returned TXID and fees
 
