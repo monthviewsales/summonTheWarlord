@@ -52,7 +52,6 @@ export function notify({
       }
       return true;
     }
-
     let handledFailure = false;
     const fallback = () => {
       if (handledFailure) return;
