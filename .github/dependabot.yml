@@ -9,8 +9,11 @@ updates:
       time: "03:00"
     # Limit to 5 open PRs at a time
     open-pull-requests-limit: 5
-    # Keep eslint updates flowing, but block unsupported v10+ major line for now.
+    # Block incompatible ESLint 10 major-line bumps until ecosystem support is ready.
     ignore:
       - dependency-name: "eslint"
+        versions:
+          - ">=10.0.0"
+      - dependency-name: "@eslint/js"
         versions:
           - ">=10.0.0"
