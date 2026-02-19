@@ -4,7 +4,7 @@
 ![Node](https://img.shields.io/badge/node-%3E%3D18.x-brightgreen)
 ![Platform](https://img.shields.io/badge/platform-macOS-blue)
 
-**Version:** 2.0.2
+**Version:** 2.1.3
 
 > _Relic software unearthed from VAULT77.  
 > For trench operators only. macOS‑native. Handle with care._  
@@ -111,10 +111,10 @@ summon man
 - `summon keychain store` — store private key in macOS Keychain
 - `summon keychain unlock` — verify key retrieval from Keychain
 - `summon keychain delete` — delete stored private key
-- `summon buy <TOKEN_MINT> <amount>` — buy with SOL amount (`auto` is not supported for buys)
-- `summon sell <TOKEN_MINT> <amount>` — sell fixed amount, percent (like `50%`), or `auto`
-- `summon wallet` — open your wallet page in browser
-- `summon doctor` — run config/Keychain/RPC/swap/notification diagnostics
+- `summon buy [TOKEN_MINT] [amount]` — buy with a fixed SOL amount or percentage (like `25%`); `auto` is not supported for buys
+- `summon sell [TOKEN_MINT] [amount]` — sell fixed amount, percent (like `50%`), or `auto`
+- `summon wallet` (`summon w`) — open your wallet page in browser
+- `summon doctor` (`summon doctor -v`) — run config/Keychain/RPC/swap/notification diagnostics with optional verbose details
 - `summon man` — display the built-in manual
 
 ---
