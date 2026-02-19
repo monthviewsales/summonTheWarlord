@@ -70,7 +70,9 @@ export function notify({
         fallback();
       }
     });
-    child.unref();
+    // Intentionally keep the child process referenced so CLI flows that call
+    // process.exit(...) immediately after notify still allow exit/error handlers
+    // to run and emit the console fallback when delivery fails.
     return true;
   } catch (err) {
     logger.warn("Notification failed.", { error: err?.message });

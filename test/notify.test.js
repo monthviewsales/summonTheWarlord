@@ -21,7 +21,7 @@ afterEach(() => {
 });
 
 describe("notify", () => {
-  test("uses non-blocking spawn by default on macOS", async () => {
+  test("uses non-blocking spawn by default on macOS and keeps child referenced for failure visibility", async () => {
     setPlatform("darwin");
 
     const child = {
@@ -45,8 +45,40 @@ describe("notify", () => {
     expect(spawn).toHaveBeenCalledTimes(1);
     expect(spawnSync).not.toHaveBeenCalled();
     expect(child.once).toHaveBeenCalledTimes(2);
-    expect(child.unref).toHaveBeenCalledTimes(1);
+    expect(child.unref).not.toHaveBeenCalled();
     expect(logSpy).not.toHaveBeenCalled();
+  });
+
+
+  test("logs fallback when osascript exits non-zero in non-blocking mode", async () => {
+    setPlatform("darwin");
+
+    const handlers = {};
+    const child = {
+      once: jest.fn((event, callback) => {
+        handlers[event] = callback;
+        return child;
+      }),
+      unref: jest.fn(),
+    };
+
+    const spawn = jest.fn().mockReturnValue(child);
+    const spawnSync = jest.fn();
+    const loggerWarn = jest.fn();
+    const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+
+    jest.unstable_mockModule("node:child_process", () => ({ spawn, spawnSync }));
+    jest.unstable_mockModule("../utils/logger.js", () => ({ logger: { warn: loggerWarn } }));
+
+    const { notify } = await import("../utils/notify.js");
+
+    const result = notify({ title: "Trade", message: "Filled" });
+    handlers.exit(1);
+
+    expect(result).toBe(true);
+    expect(loggerWarn).toHaveBeenCalledWith("Notification failed.", { error: "osascript exited with 1" });
+    expect(logSpy).toHaveBeenCalledWith("🔔 Trade: Filled");
+    expect(child.unref).not.toHaveBeenCalled();
   });
 
   test("throws NotificationError when throwOnError triggers blocking path failure", async () => {
