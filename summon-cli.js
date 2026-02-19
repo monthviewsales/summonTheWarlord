@@ -16,6 +16,7 @@ import { storePrivateKey, getPrivateKey, deletePrivateKey, hasPrivateKey } from 
 import readline from "readline";
 import { notify } from "./utils/notify.js";
 import { runDoctor } from "./lib/doctor.js";
+import { MINT_EXAMPLE, getAmountExamples, validateTradeInput } from "./lib/tradeInput.js";
 
 const program = new Command();
 program
@@ -44,6 +45,59 @@ const CONFIG_HELP = [
   { key: "jito.enabled", type: "true | false", note: "Enable Jito bundles" },
   { key: "jito.tip", type: "number", note: "Tip in SOL when Jito enabled" },
 ];
+const WIZARD_FIELD_GUIDANCE = {
+  rpcUrl: {
+    helper: "Use your SolanaTracker RPC URL. advancedTx=true is appended automatically.",
+    recommended: "Your dedicated SolanaTracker endpoint",
+    defaultValue: DEFAULT_CONFIG.rpcUrl,
+  },
+  slippage: {
+    helper: "Max swap slippage percent. Use auto to let the backend choose dynamically.",
+    recommended: DEFAULT_CONFIG.slippage,
+    defaultValue: DEFAULT_CONFIG.slippage,
+  },
+  priorityFee: {
+    helper:
+      "Use auto for adaptive fees, or set a fixed SOL value (example: 0.0005). When set to auto, priorityFeeLevel controls aggressiveness.",
+    recommended: `${DEFAULT_CONFIG.priorityFee} + ${DEFAULT_CONFIG.priorityFeeLevel}`,
+    defaultValue: DEFAULT_CONFIG.priorityFee,
+  },
+  priorityFeeLevel: {
+    helper: "Used only when priorityFee is auto. Fixed priorityFee values ignore this setting.",
+    recommended: DEFAULT_CONFIG.priorityFeeLevel,
+    defaultValue: DEFAULT_CONFIG.priorityFeeLevel,
+  },
+  txVersion: {
+    helper: "v0 supports address lookup tables. legacy is only for compatibility edge cases.",
+    recommended: DEFAULT_CONFIG.txVersion,
+    defaultValue: DEFAULT_CONFIG.txVersion,
+  },
+  showQuoteDetails: {
+    helper: "Print full quote payload after swaps. Enable only when debugging swap math.",
+    recommended: DEFAULT_CONFIG.showQuoteDetails,
+    defaultValue: DEFAULT_CONFIG.showQuoteDetails,
+  },
+  DEBUG_MODE: {
+    helper: "Verbose SDK/network logging. Useful for diagnostics, noisy for regular trading.",
+    recommended: DEFAULT_CONFIG.DEBUG_MODE,
+    defaultValue: DEFAULT_CONFIG.DEBUG_MODE,
+  },
+  notificationsEnabled: {
+    helper: "macOS desktop notifications for trade and setup events.",
+    recommended: DEFAULT_CONFIG.notificationsEnabled,
+    defaultValue: DEFAULT_CONFIG.notificationsEnabled,
+  },
+  jitoEnabled: {
+    helper: "Bundle via Jito relays. Keep disabled unless you intentionally use Jito flow.",
+    recommended: DEFAULT_CONFIG.jito.enabled,
+    defaultValue: DEFAULT_CONFIG.jito.enabled,
+  },
+  jitoTip: {
+    helper: "Tip in SOL attached to Jito bundles when enabled.",
+    recommended: DEFAULT_CONFIG.jito.tip,
+    defaultValue: DEFAULT_CONFIG.jito.tip,
+  },
+};
 
 const askQuestion = (rl, prompt) =>
   new Promise((resolve) => rl.question(prompt, (answer) => resolve(answer.trim())));
@@ -71,6 +125,16 @@ function clearScreen() {
 function renderWizardHeader() {
   console.log("⚙️  Config Wizard");
   console.log("Press Enter to keep the current value.\n");
+}
+
+function renderWizardFieldGuidance(field) {
+  const guidance = WIZARD_FIELD_GUIDANCE[field];
+  if (!guidance) {
+    return;
+  }
+  console.log(`Help: ${guidance.helper}`);
+  console.log(`Recommended: ${toDisplayValue(guidance.recommended)}`);
+  console.log(`Default: ${toDisplayValue(guidance.defaultValue)}\n`);
 }
 
 function toDisplayValue(value) {
@@ -229,24 +293,26 @@ async function runConfigWizard({ cfg, rl }) {
 
   clearScreen();
   renderWizardHeader();
-  console.log("RPC URL should be the SolanaTracker endpoint assigned to you.");
-  console.log("advancedTx=true is enforced automatically.\n");
+  renderWizardFieldGuidance("rpcUrl");
   nextCfg.rpcUrl = await promptNormalized(rl, "RPC URL", "rpcUrl", { current: nextCfg.rpcUrl });
 
   clearScreen();
   renderWizardHeader();
+  renderWizardFieldGuidance("slippage");
   nextCfg.slippage = await promptNormalized(rl, "Max slippage (number or \"auto\")", "slippage", {
     current: nextCfg.slippage,
   });
 
   clearScreen();
   renderWizardHeader();
+  renderWizardFieldGuidance("priorityFee");
   nextCfg.priorityFee = await promptNormalized(rl, "Priority fee (number or \"auto\")", "priorityFee", {
     current: nextCfg.priorityFee,
   });
 
   clearScreen();
   renderWizardHeader();
+  renderWizardFieldGuidance("priorityFeeLevel");
   nextCfg.priorityFeeLevel = await promptSelect(
     rl,
     "Priority fee level (used when priorityFee is auto)",
@@ -259,12 +325,14 @@ async function runConfigWizard({ cfg, rl }) {
 
   clearScreen();
   renderWizardHeader();
+  renderWizardFieldGuidance("txVersion");
   nextCfg.txVersion = await promptSelect(rl, "Transaction version", TX_VERSIONS, {
     current: nextCfg.txVersion,
   });
 
   clearScreen();
   renderWizardHeader();
+  renderWizardFieldGuidance("showQuoteDetails");
   const showQuoteDetails = await promptSelect(rl, "Show quote details", ["true", "false"], {
     current: nextCfg.showQuoteDetails ? "true" : "false",
   });
@@ -272,6 +340,7 @@ async function runConfigWizard({ cfg, rl }) {
 
   clearScreen();
   renderWizardHeader();
+  renderWizardFieldGuidance("DEBUG_MODE");
   const debugMode = await promptSelect(rl, "Enable debug mode", ["true", "false"], {
     current: nextCfg.DEBUG_MODE ? "true" : "false",
   });
@@ -279,6 +348,7 @@ async function runConfigWizard({ cfg, rl }) {
 
   clearScreen();
   renderWizardHeader();
+  renderWizardFieldGuidance("notificationsEnabled");
   const notificationsEnabled = await promptSelect(rl, "Enable notifications", ["true", "false"], {
     current: nextCfg.notificationsEnabled ? "true" : "false",
   });
@@ -286,6 +356,7 @@ async function runConfigWizard({ cfg, rl }) {
 
   clearScreen();
   renderWizardHeader();
+  renderWizardFieldGuidance("jitoEnabled");
   const jitoEnabled = await promptSelect(rl, "Enable Jito bundles", ["true", "false"], {
     current: nextCfg.jito.enabled ? "true" : "false",
   });
@@ -293,6 +364,7 @@ async function runConfigWizard({ cfg, rl }) {
   if (nextCfg.jito.enabled) {
     clearScreen();
     renderWizardHeader();
+    renderWizardFieldGuidance("jitoTip");
     const requireTip = nextCfg.jito.tip === undefined || nextCfg.jito.tip === null;
     nextCfg.jito.tip = await promptNumber(rl, "Jito tip (SOL)", {
       current: nextCfg.jito.tip,
@@ -311,24 +383,77 @@ const getTradeModule = async () => {
   return tradeModulePromise;
 };
 
-async function executeTrade(type, mint, amountArg) {
-  const cfg = await loadConfig();
+function getTradeCommandExample(type, mint = MINT_EXAMPLE) {
+  const amountExample = type === "buy" ? "0.01" : "auto";
+  return `summon ${type} ${mint} ${amountExample}`;
+}
 
-  if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(mint)) {
-    console.error("⚠️  Invalid mint format. Expected base58 address (32–44 chars).");
+function renderTradeValidationErrors(type, validation) {
+  console.error(`Usage: summon ${type} [mint] [amount]`);
+  for (const issue of validation.issues) {
+    console.error(`⚠️  ${issue.message}`);
+    if (issue.field === "mint") {
+      console.error(`    Example: ${getTradeCommandExample(type)}`);
+      continue;
+    }
+    if (issue.field === "amount") {
+      const amountExamples = getAmountExamples(type).join(", ");
+      const mintForExample = validation.mint || MINT_EXAMPLE;
+      console.error(`    Amount examples: ${amountExamples}`);
+      console.error(`    Example: ${getTradeCommandExample(type, mintForExample)}`);
+    }
+  }
+}
+
+async function resolveTradeInput(type, mintArg, amountArg) {
+  let mint = mintArg;
+  let amount = amountArg;
+  let validation = validateTradeInput({ type, mint, amount });
+  if (validation.ok) {
+    return validation;
+  }
+
+  const canPrompt = Boolean(process.stdin.isTTY && process.stdout.isTTY);
+  if (!canPrompt) {
+    renderTradeValidationErrors(type, validation);
     process.exit(1);
   }
 
-  let amountParam = amountArg.toString().trim().toLowerCase().replace(/\s+/g, "");
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
 
-  if (amountParam !== "auto" && !amountParam.endsWith("%")) {
-    const num = parseFloat(amountParam);
-    if (isNaN(num) || num <= 0) {
-      console.error("⚠️  Invalid amount. Use a positive number, 'auto' during a sell, or '<percent>%'.");
-      process.exit(1);
+  try {
+    while (!validation.ok) {
+      const mintIssue = validation.issues.find((issue) => issue.field === "mint");
+      if (mintIssue) {
+        console.log(`⚠️  ${mintIssue.message}`);
+        console.log(`   Example mint: ${MINT_EXAMPLE}`);
+        mint = await askQuestion(rl, "Mint address: ");
+      }
+
+      const amountIssue = validation.issues.find((issue) => issue.field === "amount");
+      if (amountIssue) {
+        console.log(`⚠️  ${amountIssue.message}`);
+        console.log(`   Amount examples: ${getAmountExamples(type).join(", ")}`);
+        amount = await askQuestion(rl, "Amount: ");
+      }
+
+      validation = validateTradeInput({ type, mint, amount });
     }
-    amountParam = num;
+  } finally {
+    rl.close();
   }
+
+  return validation;
+}
+
+async function executeTrade(type, mintArg, amountArg) {
+  const cfg = await loadConfig();
+  const validated = await resolveTradeInput(type, mintArg, amountArg);
+  const mint = validated.mint;
+  const amountParam = validated.amount;
 
   try {
     const mintDisplay = `${mint.slice(0, 4)}…${mint.slice(-4)}`;
@@ -357,7 +482,7 @@ async function executeTrade(type, mint, amountArg) {
       }
 
       const { buyToken } = await getTradeModule();
-      const result = await buyToken(mint, amountParam);
+      const result = await buyToken(mint, amountParam, { cfg });
       clearScreen();
       const info = `Received ${result.tokensReceivedDecimal} tokens | Fees ${result.totalFees} | Impact ${result.priceImpact}`;
       const buyRows = [
@@ -373,7 +498,7 @@ async function executeTrade(type, mint, amountArg) {
       }
     } else if (type === "sell") {
       const { sellToken } = await getTradeModule();
-      const result = await sellToken(mint, amountParam);
+      const result = await sellToken(mint, amountParam, { cfg });
       clearScreen();
       const info = `Received ${result.solReceivedDecimal} SOL | Fees ${result.totalFees} | Impact ${result.priceImpact}`;
       const sellRows = [
@@ -609,15 +734,15 @@ keychainCmd
   });
 
 program
-  .command("buy <mint> <amount>")
-  .description("Buy a token with SOL")
+  .command("buy [mint] [amount]")
+  .description("Buy a token with SOL (prompts for missing values in interactive TTY)")
   .action(async (mint, amount) => {
     await executeTrade("buy", mint, amount);
   });
 
 program
-  .command("sell <mint> <amount>")
-  .description("Sell a token for SOL")
+  .command("sell [mint] [amount]")
+  .description("Sell a token for SOL (prompts for missing values in interactive TTY)")
   .action(async (mint, amount) => {
     await executeTrade("sell", mint, amount);
   });
@@ -679,6 +804,23 @@ program
     }
   });
 
+function extractSuggestedCommands(results) {
+  const commands = new Set();
+  for (const result of results) {
+    if (result.status !== "fail" || !result.hint) {
+      continue;
+    }
+    const matches = [...result.hint.matchAll(/`([^`]+)`/g)];
+    for (const match of matches) {
+      const candidate = match[1].trim();
+      if (candidate.startsWith("summon ")) {
+        commands.add(candidate);
+      }
+    }
+  }
+  return [...commands];
+}
+
 // DOCTOR command
 program
   .command("doctor")
@@ -689,12 +831,28 @@ program
     for (const result of results) {
       const icon = result.status === "ok" ? "✅" : result.status === "skip" ? "⚠️" : "❌";
       console.log(`${icon} ${result.name}: ${result.message}`);
+      if (result.status === "fail" && result.hint) {
+        console.log(`   • Hint: ${result.hint}`);
+      }
       if (options.verbose && result.details) {
         console.log(`   • ${result.details}`);
       }
     }
-    const hasFailure = results.some((item) => item.status === "fail");
-    process.exit(hasFailure ? 1 : 0);
+    const failures = results.filter((item) => item.status === "fail");
+    const suggestedCommands = extractSuggestedCommands(results);
+
+    console.log("");
+    console.log(
+      `Doctor summary: ${failures.length} failure${failures.length === 1 ? "" : "s"} out of ${results.length} checks.`
+    );
+    if (suggestedCommands.length) {
+      console.log("Suggested commands:");
+      for (const command of suggestedCommands) {
+        console.log(`  • ${command}`);
+      }
+    }
+
+    process.exit(failures.length ? 1 : 0);
   });
 
 // MANUAL command
@@ -751,12 +909,13 @@ USAGE:
   summon keychain delete
       Delete the private key from macOS Keychain
 
-  summon buy <mint> <amount>
-  summon sell <mint> <amount>
+  summon buy [mint] [amount]
+  summon sell [mint] [amount]
       Buy or sell a token. Amount formats:
         • Fixed amount (e.g. 0.5 or 100)
         • Percent of holdings (e.g. 50%)
         • "auto" (sell only — sells your full balance)
+      In an interactive terminal, missing/invalid mint or amount will be prompted.
 
   summon wallet
       Open your wallet on SolanaTracker.io

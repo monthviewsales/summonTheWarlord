@@ -22,6 +22,31 @@
 
 ---
 
+## Before `summon setup`
+
+First-time operator? Run `summon man` first for the built-in walkthrough.
+
+Have these inputs ready:
+
+- SolanaTracker RPC URL assigned to your account (full `https://...` endpoint; `advancedTx=true` can be present or omitted because summon enforces it automatically)
+- Wallet private key in one accepted format: base58 string or JSON byte array string (example: `[12,34,...]`)
+
+During `summon setup`, you'll be asked for:
+
+- `rpcUrl`
+- `slippage` (`number` or `"auto"`)
+- `priorityFee` (`number` or `"auto"`)
+- `priorityFeeLevel` (`min|low|medium|high|veryHigh`)
+- `txVersion` (`v0` or `legacy`)
+- `showQuoteDetails` (`true`/`false`)
+- `DEBUG_MODE` (`true`/`false`)
+- `notificationsEnabled` (`true`/`false`)
+- `jito.enabled` (`true`/`false`)
+- `jito.tip` (SOL, only when Jito is enabled)
+- Whether to store/replace your private key now (`y/N`) and, if yes, paste the key
+
+---
+
 ## 📡 Connect with VAULT77
 
 - **VAULT77 Community:** https://x.com/i/communities/1962257350309650488
@@ -42,6 +67,8 @@ npm install -g @vault77/summon
 ```bash
 summon setup
 ```
+
+If this is your first time, run `summon man` before setup for the full command walkthrough.
 
 This:
 
@@ -64,6 +91,31 @@ summon buy <TOKEN_MINT> 0.1
 ```bash
 summon sell <TOKEN_MINT> 50%
 ```
+
+---
+
+# 📘 Command Reference
+
+For the full first-time walkthrough:
+
+```bash
+summon man
+```
+
+- `summon setup` — interactive setup for config plus Keychain/private key prompts
+- `summon config view` — show current config
+- `summon config edit` — edit config in your `$EDITOR`
+- `summon config set <key> <value>` — set one config value
+- `summon config wizard` — interactive, validated config editor
+- `summon config list` — list config keys and expected types
+- `summon keychain store` — store private key in macOS Keychain
+- `summon keychain unlock` — verify key retrieval from Keychain
+- `summon keychain delete` — delete stored private key
+- `summon buy <TOKEN_MINT> <amount>` — buy with SOL amount (`auto` is not supported for buys)
+- `summon sell <TOKEN_MINT> <amount>` — sell fixed amount, percent (like `50%`), or `auto`
+- `summon wallet` — open your wallet page in browser
+- `summon doctor` — run config/Keychain/RPC/swap/notification diagnostics
+- `summon man` — display the built-in manual
 
 ---
 
